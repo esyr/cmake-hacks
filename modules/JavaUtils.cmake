@@ -73,3 +73,40 @@ function (find_java_class _VAR _CLASS)
     endforeach (_CHECK_PATH ${_res_paths})
 endfunction (find_java_class _VAR)
 
+function (add_eclipse_plugin _TARGET_NAME _FEATURE)
+    set(_PDE_BUILD_SUBDIR pde)
+    set(_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME "${_TARGET_NAME}.zip")
+    set(_ECLIPSE_PLUGIN_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/${_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME})
+
+    find_program(_PDE_BUILD_EXECUTABLE
+        NAMES pdebuild pde-build
+        PATHS /usr/lib64/eclipse/buildscripts/
+              /usr/lib/eclipse/buildscripts/
+              /usr/share/eclipse/buildscripts/
+    )
+
+    add_custom_target(
+        "${_TARGET_NAME}_pde_dir"
+        COMMAND "${CMAKE_COMMAND}" -E remove_directory
+        "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}"
+    )
+
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/plugins" "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/plugins"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/features" "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/features"
+        COMMAND ${_PDE_BUILD_EXECUTABLE}
+            -f "${_FEATURE}"
+	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/"
+        COMMAND "${CMAKE_COMMAND}" -E copy
+            "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/build/rpmBuild/${_FEATURE}.zip" "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
+        COMMENT "Building ${_TARGET_NAME}.zip"
+        DEPENDS "${_TARGET_NAME}_pde_dir"
+    )
+
+    add_custom_target(${_TARGET_NAME} ALL DEPENDS ${_ECLIPSE_PLUGIN_OUTPUT_PATH})
+endfunction (add_eclipse_plugin _TARGET_NAME _FEATURE)
