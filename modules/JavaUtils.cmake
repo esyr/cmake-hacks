@@ -55,20 +55,29 @@ function (find_java_class _VAR _CLASS)
             break()
         else ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
             # check as if ${_CHECK_PATH} is a jar file
-            execute_process(COMMAND ${Java_JAR_EXECUTABLE} tf "${_CHECK_PATH}"
-                RESULT_VARIABLE _jar_exitcode
-                OUTPUT_VARIABLE _jar_output)
+            if (NOT "_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}")
+                execute_process(COMMAND ${Java_JAR_EXECUTABLE} tf "${_CHECK_PATH}"
+                    RESULT_VARIABLE _jar_exitcode
+                    OUTPUT_VARIABLE _jar_output)
 
-            if (${_jar_exitcode} EQUAL 0)
-                #message(STATUS "Checking ${_CHECK_PATH}: ${_jar_output}")
-                string(FIND "\n${_jar_output}\n" "\n${_needle}\n" _position)
-                if ("${_position}" GREATER -1)
-                     set(${_VAR} "${_CHECK_PATH}" PARENT_SCOPE)
-                     break()
-                endif ("${_position}" GREATER -1)
-            else (${_jar_exitcode} EQUAL 0)
-                message(WARNING "Error during interpreting ${_CHECK_PATH} as a jar file.")
-            endif (${_jar_exitcode} EQUAL 0)
+                string(REPLACE "\n" ";" _jar_output "${_jar_output}")
+
+                if (${_jar_exitcode} EQUAL 0)
+                    #message(STATUS "Saving listing for ${_CHECK_PATH} to cache.")
+                    set("_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}" "${_jar_output}" CACHE STRING "Cache for listing of ${_CHECK_PATH} archive")
+                    mark_as_advanced("_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}")
+                else (${_jar_exitcode} EQUAL 0)
+                    message(WARNING "Error during interpreting ${_CHECK_PATH} as a jar file.")
+                endif (${_jar_exitcode} EQUAL 0)
+            else (NOT "_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}")
+                #message(STATUS "Using cached value for ${_CHECK_PATH}")
+            endif (NOT "_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}")
+
+            list(FIND "_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}" "${_needle}" _position)
+            if ("${_position}" GREATER -1)
+                set(${_VAR} "${_CHECK_PATH}" PARENT_SCOPE)
+                break()
+            endif ("${_position}" GREATER -1)
         endif ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
     endforeach (_CHECK_PATH ${_res_paths})
 endfunction (find_java_class _VAR)
