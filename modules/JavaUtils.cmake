@@ -160,25 +160,25 @@ endfunction (install_eclipse_plugin _TARGET_NAME)
 function (get_classpath _VAR _MANIFEST_PATH)
     execute_process(
         COMMAND awk
-            "/^[ \t]*Bundle-ClassPath[ \t]*:[ \t]*/ { \
-                start=1; \
-                gsub(\"^[ \t]*Bundle-ClassPath[ \t]*:[ \t]*\", \"\"); \
-            } \
-            (start == 1) { \
-                pr=$0; \
-                n = split(pr, pr_items, \"[ \t]*,[ \t]*\"); \
-                for (i = 1; i<=n; i++) \
-                { \
-                    if (pr_items[i]) \
-                    { \
-                        sub(\"^[ \t]*\", \"\", pr_items[i]); \
-                        sub(\"[ \t]*$\", \"\", pr_items[i]); \
-                        print pr_items[i]; \
-                    } \
-                } \
-           } \
-           /,[ \t]*$/ { \
-               start=0 \
+            "/^[ \t]*Bundle-ClassPath[ \t]*:[ \t]*/ {
+                start=1;
+                gsub(\"^[ \t]*Bundle-ClassPath[ \t]*:[ \t]*\", \"\");
+            }
+            (start == 1) {
+                pr=$0;
+                n = split(pr, pr_items, \"[ \t]*,[ \t]*\");
+                for (i = 1; i<=n; i++)
+                {
+                    if (pr_items[i])
+                    {
+                        sub(\"^[ \t]*\", \"\", pr_items[i]);
+                        sub(\"[ \t]*$\", \"\", pr_items[i]);
+                        print pr_items[i];
+                    }
+                }
+           }
+           /,[ \t]*$/ {
+               start=0
            }" "${_MANIFEST_PATH}"
         OUTPUT_VARIABLE _OUT
         ERROR_VARIABLE _RES
