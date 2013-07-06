@@ -126,11 +126,11 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
     )
 
     add_custom_target(
-	    "${_TARGET_NAME}_unpack_prepare"
+        "${_TARGET_NAME}_unpack_prepare"
         COMMAND "${CMAKE_COMMAND}" -E make_directory
             "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
-	    DEPENDS "${_TARGET_NAME}_prepare"
-		COMMENT "Creating ${_TARGET_NAME} unpack destination dir."
+        DEPENDS "${_TARGET_NAME}_prepare"
+        COMMENT "Creating ${_TARGET_NAME} unpack destination dir."
     )
 
     add_custom_target(
@@ -139,14 +139,14 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
             "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
         WORKING_DIRECTORY "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
         DEPENDS "${_TARGET_NAME}_unpack_prepare" ${_ECLIPSE_PLUGIN_OUTPUT_PATH}
-		COMMENT "Unpacking ${_TARGET_NAME}.zip."
+        COMMENT "Unpacking ${_TARGET_NAME}.zip."
     )
 
     add_custom_target(${_TARGET_NAME} ALL
         DEPENDS ${_ECLIPSE_PLUGIN_OUTPUT_PATH} "${_TARGET_NAME}_unpack"
     )
 
-	install_eclipse_plugin(${_TARGET_NAME})
+    install_eclipse_plugin(${_TARGET_NAME})
 endfunction (add_eclipse_plugin _TARGET_NAME _FEATURE)
 
 function (install_eclipse_plugin _TARGET_NAME)
