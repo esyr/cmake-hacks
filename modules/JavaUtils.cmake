@@ -218,16 +218,16 @@ function (generate_manifests _PATH)
                 endif (_RES_CP)
             endforeach (_CP_ITEM ${MF_CP})
 
-			string(MATCH ".*/" _MANIFEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/${_MANIFEST_PATH}")
+            string(MATCH ".*/" _MANIFEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/${_MANIFEST_PATH}")
             execute_process(
-				COMMAND "${CMAKE_COMMAND}" -E make_directory "${_MANIFEST_DIR}"
-			)
+                COMMAND "${CMAKE_COMMAND}" -E make_directory "${_MANIFEST_DIR}"
+            )
 
             if (_RES_CP)
                 execute_process(
                     COMMAND awk "" "${_MANIFEST_PATH}"
                     OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_MANIFEST_PATH}"
-				)
+                )
             endif (_RES_CP)
         endif ("${_MF}" MATCHES ".*/META-INF/MANIFEST_MF")
     endforeach (_MF ${_MANIFESTS})
