@@ -232,3 +232,28 @@ function (generate_manifests _PATH)
         endif ("${_MF}" MATCHES ".*/META-INF/MANIFEST_MF")
     endforeach (_MF ${_MANIFESTS})
 endfunction (generate_manifests _PATH)
+
+function (get_import_list _VAR)
+    execute_process(
+        COMMAND awk "
+            BEGIN {
+                FS=\";\"; ORS=\";\"
+            }
+            /import/{
+                for (i = 1; i <= NF; i++) {
+                    if (\$i ~ /^[ \t]*import[ \t]+([^ ]+)[ \t]*$/) {
+                        sub(\"^[ \t]*import[ \t]+\", \"\", $i);
+                        print $i;
+                    }
+                }
+            }" ${ARGN}
+        OUTPUT_VARIABLE _OUT
+        RESULT_VARIABLE _RES
+    )
+
+    if (_RES EQUAL 0)
+        list(REMOVE_DUPLICATES _OUT)
+
+        set(${_VAR} "${_OUT}" PARENT_SCOPE)
+    endif (_RES EQUAL 0)
+endfunction (get_import_list)
