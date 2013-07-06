@@ -181,7 +181,7 @@ function (get_classpath _VAR _MANIFEST_PATH)
                start=0
            }" "${_MANIFEST_PATH}"
         OUTPUT_VARIABLE _OUT
-        ERROR_VARIABLE _RES
+        RESULT_VARIABLE _RES
     )
 
     if ("${_RES}" == 0)
