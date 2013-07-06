@@ -1,8 +1,6 @@
 # find_java_class(<variable> <class> path1 path2 ...)
 function (find_java_class _VAR _CLASS)
-    if ("${_VAR}")
-        return()
-    endif ("${_VAR}")
+    set(_CLASS_FOUND 0)
 
     message(STATUS "Looking for java class ${_CLASS}...")
 
@@ -51,7 +49,9 @@ function (find_java_class _VAR _CLASS)
         string(REPLACE "${_needle}" "" _prefix "${_CHECK_PATH}")
 
         if ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
+            message(STATUS "Found for ${_CLASS}: ${_CHECK_PATH}")
             set(${_VAR} "${_CHECK_PATH}" PARENT_SCOPE) # XXX or ${_prefix} ?
+            set(_CLASS_FOUND 1)
             break()
         else ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
             # check as if ${_CHECK_PATH} is a jar file
@@ -75,11 +75,17 @@ function (find_java_class _VAR _CLASS)
 
             list(FIND "_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}" "${_needle}" _position)
             if ("${_position}" GREATER -1)
+                message(STATUS "Found for ${_CLASS}: ${_CHECK_PATH}")
                 set(${_VAR} "${_CHECK_PATH}" PARENT_SCOPE)
+                set(_CLASS_FOUND 1)
                 break()
             endif ("${_position}" GREATER -1)
         endif ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
     endforeach (_CHECK_PATH ${_res_paths})
+
+    if (NOT _CLASS_FOUND)
+        message(STATUS "Class ${_CLASS} NOT found!")
+    endif (NOT _CLASS_FOUND)
 endfunction (find_java_class _VAR)
 
 function (add_eclipse_plugin _TARGET_NAME _FEATURE)
