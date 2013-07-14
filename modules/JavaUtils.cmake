@@ -128,6 +128,9 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
 
     add_custom_target(
         "${_TARGET_NAME}_prepare"
+        #COMMAND "${CMAKE_COMMAND}" -E echo "Removing dirs"
+        COMMAND "${CMAKE_COMMAND}" -E remove
+            "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
         COMMAND "${CMAKE_COMMAND}" -E remove_directory
             "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
         COMMAND "${CMAKE_COMMAND}" -E remove_directory
@@ -135,6 +138,7 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         COMMAND "${CMAKE_COMMAND}" -E make_directory
             "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}"
         COMMENT "Preparing to build ${_TARGET_NAME}.zip - recreating build directory."
+        DEPENDS ${${_TARGET}_SOURCES}
     )
 
     file(GLOB_RECURSE ${_TARGET}_SOURCES
