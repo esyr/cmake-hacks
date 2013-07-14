@@ -366,8 +366,8 @@ function (generate_manifests _PATH)
                 string(REGEX MATCH "[^/\]*\.(jar|class)" _DEP "${_CP_ITEM}")
 
                 if (_DEP)
-                    set(_FOUND_DEP "")
-                    find_java_class(_FOUND_DEP _DEP)
+                    set(_FOUND_DEP "_FOUND_DEP-NOTFOUND" CACHE INTERNAL "")
+                    find_file(_FOUND_DEP ${_DEP})
 
                     if (_FOUND_DEP)
                         set(_CP_ITEM "${_FOUND_DEP}")
