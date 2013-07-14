@@ -64,7 +64,7 @@ function (find_java_class _VAR _CLASS)
 
                 if (${_jar_exitcode} EQUAL 0)
                     #message(STATUS "Saving listing for ${_CHECK_PATH} to cache.")
-                    set("_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}" "${_jar_output}" CACHE STRING "Cache for listing of ${_CHECK_PATH} archive")
+                    set("_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}" "${_jar_output}" CACHE INTERNAL "Cache for listing of ${_CHECK_PATH} archive")
                     mark_as_advanced("_FIND_JAVA_CLASS_JAR_LIST_CACHE_${_CHECK_PATH}")
                 else (${_jar_exitcode} EQUAL 0)
                     message(WARNING "Error during interpreting ${_CHECK_PATH} as a jar file.")
