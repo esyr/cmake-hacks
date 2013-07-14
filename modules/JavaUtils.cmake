@@ -199,9 +199,10 @@ function (get_classpath _VAR _MANIFEST_PATH)
         RESULT_VARIABLE _RES
     )
 
-    if ("${_RES}" == 0)
+    if ("${_RES}" EQUAL 0)
+        string(REPLACE "\n" ";" _OUT "${_OUT}")
         set(${_VAR} "${_OUT}" PARENT_SCOPE)
-    endif ("${_RES}" == 0)
+    endif ("${_RES}" EQUAL 0)
 endfunction (get_classpath _VAR _MANIFEST_PATH)
 
 function (generate_manifests _PATH)
