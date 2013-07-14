@@ -1,3 +1,6 @@
+include(CMakeParseArguments)
+include(PathUtils)
+
 # find_java_class(<variable> <class> path1 path2 ...)
 function (find_java_class _VAR _CLASS)
     set(_CLASS_FOUND 0)
@@ -204,6 +207,89 @@ function (get_classpath _VAR _MANIFEST_PATH)
         set(${_VAR} "${_OUT}" PARENT_SCOPE)
     endif ("${_RES}" EQUAL 0)
 endfunction (get_classpath _VAR _MANIFEST_PATH)
+
+# Searches for local classpath classes and jars in system and other directories.
+# Paths examined in the following order:
+#  - Manifest path (if LOCAL_FIRST option provided)
+#  - Provided path
+#  - System path
+#  - Manifest path (if LOCAL_FIRST option not provided; default)
+#
+# _VAR contains list of <name>=<value> records as a result.
+function (find_classpath _VAR _MANIFEST_PATH)
+    set(_Options "LOCAL_FIRST")
+    set(_OneValueArgs "")
+    set(_MultiValueArgs "PATHS")
+    cmake_parse_arguments(FIND_CLASSPATH
+        "${_Options}"
+        "${_OneValueArgs}"
+        "${_MultiValueArgs}"
+        ${ARGN})
+
+    set(_find_file_paths
+        ${FIND_CLASSPATH_PATHS}
+        /usr/share/java/
+        /usr/local/share/java/
+        ${Java_JAR_PATHS})
+
+    set(_classpath "")
+    get_classpath(_classpath "${_MANIFEST_PATH}")
+    get_abs_path(_MANIFEST_ABS_PATH "${_MANIFEST_PATH}" BASE "${CMAKE_CURRENT_SOURCE_DIR}")
+    get_filename_component(_MANIFEST_DIR "${_MANIFEST_ABS_PATH}" PATH)
+    string(REGEX REPLACE "/META-INF/?$" "" _MANIFEST_DIR "${_MANIFEST_DIR}")
+
+    foreach (_cpitem ${_classpath})
+        get_abs_path(_cpitem_abs_path "${_cpitem}" BASE "${_MANIFEST_DIR}")
+
+        string(FIND "${_cpitem_abs_path}" "${_MANIFEST_DIR}" _pos)
+        if ("${_pos}" EQUAL 0)
+            if ("${_cpitem_abs_path}" MATCHES "[.]jar$")
+                # We have just to find file
+                get_filename_component(_cpitem_name "${_cpitem}" NAME)
+
+                set("${_cpitem_name}_cpitem_path" "${_cpitem_name}_cpitem_path-NOTFOUND" CACHE INTERNAL "")
+
+                if (FIND_CLASSPATH_LOCAL_FIRST)
+                    if (EXISTS "${_cpitem_abs_path}")
+                        set("${_cpitem_name}_cpitem_path" "${_cpitem_abs_path}")
+                    endif (EXISTS "${_cpitem_abs_path}")
+                endif (FIND_CLASSPATH_LOCAL_FIRST)
+
+                if (NOT "${_cpitem_name}_cpitem_path")
+                    foreach (_path ${_find_file_paths})
+                        get_filename_component(_fn "${_path}" NAME)
+
+                        if ("${_fn}" STREQUAL "${_cpitem_name}")
+                            set("${_cpitem_name}_cpitem_path" "${_path}")
+                            break()
+                        endif ("${_fn}" STREQUAL "${_cpitem_name}")
+                    endforeach (_path ${_find_file_paths})
+                endif (NOT "${_cpitem_name}_cpitem_path")
+
+                if (NOT "${_cpitem_name}_cpitem_path")
+                    find_file("${_cpitem_name}_cpitem_path" "${_cpitem_name}"
+                        PATHS ${_find_file_paths})
+                endif (NOT "${_cpitem_name}_cpitem_path")
+
+                if (NOT "${_cpitem_name}_cpitem_path" AND NOT FIND_CLASSPATH_LOCAL_FIRST)
+                    if (EXISTS "${_cpitem_abs_path}")
+                        set("${_cpitem_name}_cpitem_path" "${_cpitem_abs_path}")
+                    endif (EXISTS "${_cpitem_abs_path}")
+                endif (NOT "${_cpitem_name}_cpitem_path" AND NOT FIND_CLASSPATH_LOCAL_FIRST)
+
+                set(_result ${_result} "${_cpitem}=${${_cpitem_name}_cpitem_path}")
+            else ("${_cpitem_abs_path}" MATCHES "[.]jar$")
+                # We have to find all classes present in existing path
+
+                #if (FIND_CLASSiPATH_LOCAL_FIRST)
+                #    find_file()
+                #endif (FIND_CLASSPATH_LOCAL_FIRST)
+            endif ("${_cpitem_abs_path}" MATCHES "[.]jar$")
+        endif ("${_pos}" EQUAL 0)
+    endforeach (_cpitem ${_classpath})
+
+    set(${_VAR} "${_result}" PARENT_SCOPE)
+endfunction (find_classpath _VAR _MANIFEST_PATH)
 
 function (generate_manifests _PATH)
     file(GLOB_RECURSE _MANIFESTS RELATIVE "${_PATH}" "MANIFEST.MF")
