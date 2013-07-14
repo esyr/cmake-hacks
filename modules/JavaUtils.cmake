@@ -91,11 +91,24 @@ function (find_java_class _VAR _CLASS)
     endif (NOT _CLASS_FOUND)
 endfunction (find_java_class _VAR)
 
+set(_PDE_BUILD_SUBDIR pde)
+
 function (add_eclipse_plugin _TARGET_NAME _FEATURE)
-    set(_PDE_BUILD_SUBDIR pde)
+    set(_Options LOCAL_FIRST)
+    set(_OneValueArgs "")
+    set(_MultiValueArgs PATHS DEPS)
+    cmake_parse_arguments(AEP
+        "${_Options}"
+        "${_OneValueArgs}"
+        "${_MultiValueArgs}"
+        ${ARGN})
+
+    set(_ECLIPSE_PLUGIN_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR})
     set(_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME "${_TARGET_NAME}.zip")
     set(_ECLIPSE_PLUGIN_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/${_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME})
     set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_dir)
+
+    file(GLOB_RECURSE ${_TARGET_NAME}_MANIFESTS MANIFEST.MF)
 
     find_program(_PDE_BUILD_EXECUTABLE
         NAMES pdebuild pde-build
@@ -128,18 +141,64 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*"
         "${CMAKE_CURRENT_SOURCE_DIR}/features/*")
 
+    add_custom_target(
+        "${_TARGET_NAME}_make_build_dir"
+        #COMMAND "${CMAKE_COMMAND}" -E echo "Copying dirs"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins" "${_ECLIPSE_PLUGIN_BUILD_DIR}/plugins"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/features" "${_ECLIPSE_PLUGIN_BUILD_DIR}/features"
+        DEPENDS "${_TARGET_NAME}_prepare" ${AEP_DEPS}
+    )
+
+    set(_dep_paths "")
+
+    foreach(_MANIFEST_PATH ${${_TARGET_NAME}_MANIFESTS})
+        find_classpath(_cp_paths "${_MANIFEST_PATH}" ${ARGN})
+
+        get_abs_path(_MANIFEST_ABS_PATH "${_MANIFEST_PATH}" BASE "${CMAKE_CURRENT_SOURCE_DIR}")
+        file(RELATIVE_PATH _MANIFEST_REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${_MANIFEST_ABS_PATH}")
+        get_abs_path(_MANIFEST_ABS_PATH "${_MANIFEST_REL_PATH}" BASE "${_ECLIPSE_PLUGIN_BUILD_DIR}")
+        get_filename_component(_MANIFEST_DIR "${_MANIFEST_ABS_PATH}" PATH)
+        string(REGEX REPLACE "/META-INF/?$" "" _MANIFEST_DIR "${_MANIFEST_DIR}")
+
+        foreach (spec ${_cp_paths})
+            string(FIND "${spec}" "=" _pos)
+            string(SUBSTRING "${spec}" 0 "${_pos}" _libname)
+            math(EXPR _pos "${_pos}+1")
+            string(SUBSTRING "${spec}" "${_pos}" -1 _src_path)
+            get_abs_path(_dst_path "${_libname}" BASE "${_MANIFEST_DIR}")
+            string(REPLACE "_" "__" _dst_path_name "${_dst_path}")
+            string(REPLACE "/" "_" _dst_path_name "${_dst_path_name}")
+            get_filename_component(_dst_dir "${_dst_path}" PATH)
+
+            add_custom_target(
+                "${_TARGET_NAME}_${_dst_path_name}"
+                COMMAND "${CMAKE_COMMAND}" -E echo "Copying ${_src_path} to ${_dst_path}"
+                COMMAND "${CMAKE_COMMAND}" -E make_directory
+                    "${_dst_dir}"
+                COMMAND "${CMAKE_COMMAND}" -E copy
+                    "${_src_path}" "${_dst_path}"
+                DEPENDS "${_TARGET_NAME}_make_build_dir" "${_src_path}"
+            )
+
+            list(APPEND _dep_paths "${_TARGET_NAME}_${_dst_path_name}")
+        endforeach (spec ${cp_paths})
+    endforeach(_MANIFEST_PATH ${${_TARGET_NAME}_MANIFESTS})
+
+    add_custom_target(
+        "${_TARGET_NAME}_copy_deps"
+        DEPENDS "${_TARGET_NAME}_make_build_dir" ${_dep_paths}
+    )
+
     add_custom_command(
         OUTPUT "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins" "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/plugins"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/features" "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/features"
         COMMAND ${_PDE_BUILD_EXECUTABLE}
             -f "${_FEATURE}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/"
+        WORKING_DIRECTORY "${_ECLIPSE_PLUGIN_BUILD_DIR}/"
         COMMAND "${CMAKE_COMMAND}" -E copy
-            "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}/build/rpmBuild/${_FEATURE}.zip" "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
-        DEPENDS "${_TARGET_NAME}_prepare" ${${_TARGET}_SOURCES}
+            "${_ECLIPSE_PLUGIN_BUILD_DIR}/build/rpmBuild/${_FEATURE}.zip" "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
+        DEPENDS "${_TARGET_NAME}_copy_deps"
         COMMENT "Building ${_TARGET_NAME}.zip"
     )
 
