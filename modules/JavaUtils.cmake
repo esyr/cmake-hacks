@@ -169,7 +169,7 @@ function (install_eclipse_plugin _TARGET_NAME)
 
     include(GNUInstallDirs)
 
-    install(DIRECTORY "${_ECLIPSE_PLUGIN_OUTPUT_DIR}/eclipse" DESTINATION "${CMAKE_INSTALL_DATADIR}")
+    install(DIRECTORY "${_ECLIPSE_PLUGIN_OUTPUT_DIR}/eclipse/plugins" DESTINATION "${CMAKE_INSTALL_DATADIR}/eclipse/dropins/${_TARGET_NAME}/")
 endfunction (install_eclipse_plugin _TARGET_NAME)
 
 function (get_classpath _VAR _MANIFEST_PATH)
