@@ -192,7 +192,7 @@ function (get_classpath _VAR _MANIFEST_PATH)
                     }
                 }
            }
-           /,[ \t]*$/ {
+           /[^,][ \t]*$/ {
                start=0
            }" "${_MANIFEST_PATH}"
         OUTPUT_VARIABLE _OUT
