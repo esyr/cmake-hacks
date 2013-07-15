@@ -12,12 +12,13 @@ function (get_abs_path _VAR _PATH)
 		${ARGN}
 	)
 
+	set(_result "")
+
 	if (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
-		get_filename_component(${_VAR} "${GET_ABS_PATH_BASE}/${_PATH}" REALPATH)
+		get_filename_component(_result "${GET_ABS_PATH_BASE}/${_PATH}" REALPATH)
 	else (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
-		get_filename_component(${_VAR} "${_PATH}" REALPATH)
+		get_filename_component(_result "${_PATH}" REALPATH)
 	endif (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
 
-	set(${_VAR} ${${_VAR}} PARENT_SCOPE)
+	set(${_VAR} "${_result}" PARENT_SCOPE)
 endfunction (get_abs_path _VAR _PATH)
-
