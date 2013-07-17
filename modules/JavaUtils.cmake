@@ -30,6 +30,8 @@ function (find_java_class _VAR _CLASS)
     string(REGEX REPLACE "\\." "/" _needle "${_CLASS}")
     set(_needle "${_needle}.class")
 
+    set(_check_paths "")
+
     foreach (_PATH ${_find_paths})
         # Absolute - paths with jar/class
         if (IS_ABSOLUTE "${_PATH}")
@@ -40,9 +42,9 @@ function (find_java_class _VAR _CLASS)
 
             if ((IS_DIRECTORY "${_PATH}") AND (EXISTS "${_PATH}"))
                 file(GLOB_RECURSE _files "${_PATH}/*.class" "${_PATH}/*.jar")
-                set(_res_paths ${_res_paths} ${_files})
+                set(_check_paths ${_check_paths} ${_files})
             else ((IS_DIRECTORY "${_PATH}") AND (EXISTS "${_PATH}"))
-                set(_res_paths ${_res_paths} ${_PATH})
+                set(_check_paths ${_check_paths} ${_PATH})
             endif ((IS_DIRECTORY "${_PATH}") AND (EXISTS "${_PATH}"))
         # Relative - jar/class to find
         else (IS_ABSOLUTE "${_PATH}")
@@ -51,12 +53,12 @@ function (find_java_class _VAR _CLASS)
             find_file(_res_path "${_PATH}" PATHS ${_find_file_paths})
 
             if (EXISTS "${_res_path}")
-                set(_res_paths ${_res_paths} ${_res_path})
+                set(_check_paths ${_check_paths} ${_res_path})
             endif (EXISTS "${_res_path}")
         endif (IS_ABSOLUTE "${_PATH}")
     endforeach (_PATH ${_find_paths})
 
-    foreach (_CHECK_PATH ${_res_paths})
+    foreach (_CHECK_PATH ${_check_paths})
         # If file is a class
 
         ## assuming thre prefix should remain after replace
@@ -95,7 +97,7 @@ function (find_java_class _VAR _CLASS)
                 break()
             endif ("${_position}" GREATER -1)
         endif ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
-    endforeach (_CHECK_PATH ${_res_paths})
+    endforeach (_CHECK_PATH ${_check_paths})
 
     if (NOT _CLASS_FOUND)
         message(STATUS "Class ${_CLASS} NOT found!")
