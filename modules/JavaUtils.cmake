@@ -1,6 +1,12 @@
 include(CMakeParseArguments)
 include(PathUtils)
 
+set(JAVA_STD_PATHS
+    "/usr/share/java/"
+    "/usr/local/share/java/"
+    CACHE INTERNAL "Java standard search paths for JavaUtil"
+    )
+
 # find_java_class(<variable> <class> path1 path2 ...)
 function (find_java_class _VAR _CLASS)
     set(_CLASS_FOUND 0)
@@ -8,8 +14,7 @@ function (find_java_class _VAR _CLASS)
     message(STATUS "Looking for java class ${_CLASS}...")
 
     set(_find_file_paths
-        /usr/share/java/
-        /usr/local/share/java/
+        ${JAVA_STD_PATHS}
         ${Java_JAR_PATHS})
     set(_find_paths
         ${ARGN}
@@ -291,8 +296,7 @@ function (find_classpath _VAR _MANIFEST_PATH)
 
     set(_find_file_paths
         ${FIND_CLASSPATH_PATHS}
-        /usr/share/java/
-        /usr/local/share/java/
+        ${JAVA_STD_PATHS}
         ${Java_JAR_PATHS})
 
     set(_classpath "")
