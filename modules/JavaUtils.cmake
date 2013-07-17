@@ -4,6 +4,12 @@ include(PathUtils)
 set(JAVA_STD_PATHS
     "/usr/share/java/"
     "/usr/local/share/java/"
+    "/usr/lib/java/"
+    "/usr/lib64/java/"
+    "/usr/lib32/java/"
+    "/usr/local/lib/java/"
+    "/usr/local/lib64/java/"
+    "/usr/local/lib32/java/"
     CACHE INTERNAL "Java standard search paths for JavaUtil"
     )
 
