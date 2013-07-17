@@ -341,8 +341,14 @@ function (find_classpath _VAR _MANIFEST_PATH)
                 endif (NOT "${_cpitem_name}_cpitem_path")
 
                 if (NOT "${_cpitem_name}_cpitem_path")
-                    find_file("${_cpitem_name}_cpitem_path" "${_cpitem_name}"
-                        PATHS ${_find_file_paths})
+                    foreach (_path ${_find_file_paths})
+                        file(GLOB_RECURSE _files "${_path}/${_cpitem_name}")
+                        if (_files)
+                            list(GET _files 0 _file_item)
+                            set("${_cpitem_name}_cpitem_path" "${_file_item}")
+                            break()
+                        endif (_files)
+                    endforeach (_path ${_find_file_paths})
                 endif (NOT "${_cpitem_name}_cpitem_path")
 
                 if (NOT "${_cpitem_name}_cpitem_path" AND NOT FIND_CLASSPATH_LOCAL_FIRST)
