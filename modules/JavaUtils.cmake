@@ -335,6 +335,7 @@ function (find_classpath _VAR _MANIFEST_PATH)
             if ("${_cpitem_abs_path}" MATCHES "[.]jar$")
                 # We have just to find file
                 get_filename_component(_cpitem_name "${_cpitem}" NAME)
+                get_filename_component(_cpitem_name_we "${_cpitem}" NAME_WE)
 
                 set("${_cpitem_name}_cpitem_path" "${_cpitem_name}_cpitem_path-NOTFOUND" CACHE INTERNAL "")
 
@@ -357,7 +358,7 @@ function (find_classpath _VAR _MANIFEST_PATH)
 
                 if (NOT "${_cpitem_name}_cpitem_path")
                     foreach (_path ${_find_file_paths})
-                        file(GLOB_RECURSE _files "${_path}/${_cpitem_name}")
+                        file(GLOB_RECURSE _files "${_path}/${_cpitem_name}" "${_path}/${_cpitem_name_we}-*.jar")
                         if (_files)
                             list(GET _files 0 _file_item)
                             set("${_cpitem_name}_cpitem_path" "${_file_item}")
