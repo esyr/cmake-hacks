@@ -239,15 +239,30 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         DEPENDS ${_ECLIPSE_PLUGIN_OUTPUT_PATH} "${_TARGET_NAME}_unpack"
     )
 
-    install_eclipse_plugin(${_TARGET_NAME})
+    install_eclipse_plugin(${_TARGET_NAME} ${ARGN})
 endfunction (add_eclipse_plugin _TARGET_NAME _FEATURE)
 
 function (install_eclipse_plugin _TARGET_NAME)
+    set(_Options "")
+    set(_OneValueArgs "INSTALL_PATH")
+    set(_MultiValueArgs "")
+    cmake_parse_arguments(IEP
+        "${_Options}"
+        "${_OneValueArgs}"
+        "${_MultiValueArgs}"
+        ${ARGN})
+
+    if (IEP_INSTALL_PATH)
+		set(_install_path "${IEP_INSTALL_PATH}")
+    else (IEP_INSTALL_PATH)
+		set(_install_path "${CMAKE_INSTALL_DATADIR}/eclipse/dropins/${_TARGET_NAME}/")
+    endif (IEP_INSTALL_PATH)
+
     set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_dir)
 
     include(GNUInstallDirs)
 
-    install(DIRECTORY "${_ECLIPSE_PLUGIN_OUTPUT_DIR}/eclipse/plugins" DESTINATION "${CMAKE_INSTALL_DATADIR}/eclipse/dropins/${_TARGET_NAME}/")
+    install(DIRECTORY "${_ECLIPSE_PLUGIN_OUTPUT_DIR}/eclipse/plugins" DESTINATION "${_install_path}/")
 endfunction (install_eclipse_plugin _TARGET_NAME)
 
 function (get_classpath _VAR _MANIFEST_PATH)
