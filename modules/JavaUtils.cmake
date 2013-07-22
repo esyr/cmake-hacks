@@ -384,7 +384,7 @@ function (find_classpath _VAR _MANIFEST_PATH)
             else ("${_cpitem_abs_path}" MATCHES "[.]jar$")
                 # We have to find all classes present in existing path
 
-                #if (FIND_CLASSiPATH_LOCAL_FIRST)
+                #if (FIND_CLASSPATH_LOCAL_FIRST)
                 #    find_file()
                 #endif (FIND_CLASSPATH_LOCAL_FIRST)
             endif ("${_cpitem_abs_path}" MATCHES "[.]jar$")
