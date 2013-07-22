@@ -373,6 +373,13 @@ function (find_classpath _VAR _MANIFEST_PATH)
                     endif (EXISTS "${_cpitem_abs_path}")
                 endif (NOT "${_cpitem_name}_cpitem_path" AND NOT FIND_CLASSPATH_LOCAL_FIRST)
 
+                if (NOT "${_cpitem_name}_cpitem_path")
+                    # We should generate error regarding it somewhere
+                    message(STATUS "Searching for classpath for ${_MANIFEST_PATH}: NOT found ${_cpitem_name}")
+                else (NOT "${_cpitem_name}_cpitem_path")
+                    message(STATUS "Searching for classpath for ${_MANIFEST_PATH}: found for ${_cpitem_name}: ${${_cpitem_name}_cpitem_path}")
+                endif (NOT "${_cpitem_name}_cpitem_path")
+
                 set(_result ${_result} "${_cpitem}=${${_cpitem_name}_cpitem_path}")
             else ("${_cpitem_abs_path}" MATCHES "[.]jar$")
                 # We have to find all classes present in existing path
