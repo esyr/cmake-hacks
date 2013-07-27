@@ -253,9 +253,9 @@ function (install_eclipse_plugin _TARGET_NAME)
         ${ARGN})
 
     if (IEP_INSTALL_PATH)
-		set(_install_path "${IEP_INSTALL_PATH}")
+        set(_install_path "${IEP_INSTALL_PATH}")
     else (IEP_INSTALL_PATH)
-		set(_install_path "${CMAKE_INSTALL_DATADIR}/eclipse/dropins/${_TARGET_NAME}/")
+        set(_install_path "${CMAKE_INSTALL_DATADIR}/eclipse/dropins/${_TARGET_NAME}/")
     endif (IEP_INSTALL_PATH)
 
     set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_dir)
