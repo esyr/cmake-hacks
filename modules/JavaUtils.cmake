@@ -10,6 +10,15 @@ set(JAVA_STD_PATHS
     "/usr/local/lib/java/"
     "/usr/local/lib64/java/"
     "/usr/local/lib32/java/"
+    # XXX some additional path for eclipse
+    "/usr/share/eclipse/"
+    "/usr/lib/eclipse/"
+    "/usr/lib64/eclipse/"
+    "/usr/lib32/eclipse/"
+    "/usr/local/share/eclipse/"
+    "/usr/local/lib/eclipse/"
+    "/usr/local/lib64/eclipse/"
+    "/usr/local/lib32/eclipse/"
     CACHE INTERNAL "Java standard search paths for JavaUtil"
     )
 
