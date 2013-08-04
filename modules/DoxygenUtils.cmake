@@ -122,7 +122,14 @@ function (add_doxygen _TARGET_NAME)
 			endif ()
 
 			get_target_property(_sources_list "${_target}" SOURCES)
-			string(REPLACE ";" " " _source_files "${_sources_list}")
+
+			set(_sources_fullpath)
+			foreach (_source ${_sources_list})
+				get_filename_component(_source "${_source}" ABSOLUTE)
+				list(APPEND _sources_fullpath "${_source}")
+			endforeach ()
+
+			string(REPLACE ";" " " _source_files "${_sources_fullpath}")
 
 			_doxygen_target()
 		endforeach ()
@@ -134,7 +141,14 @@ function (add_doxygen _TARGET_NAME)
 		set(_project_name "${GENERATE_DOXYGEN_PROJECT_NAME}")
 
 		get_target_property(_source_files "${GENERATE_DOXYGEN_FILES}")
-		string(REPLACE ";" " " _source_files "${_source_files}")
+
+		set(_sources_fullpath)
+		foreach (_source ${_source_files})
+			get_filename_component(_source "${_source}" ABSOLUTE)
+			list(APPEND _sources_fullpath "${_source}")
+		endforeach ()
+
+		string(REPLACE ";" " " _source_files "${_sources_fullpath}")
 
 		_doxygen_target()
 	endif ()
