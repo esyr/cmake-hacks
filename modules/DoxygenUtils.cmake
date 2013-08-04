@@ -131,6 +131,14 @@ function (add_doxygen _TARGET_NAME)
 
 			string(REPLACE ";" " " _source_files "${_sources_fullpath}")
 
+			get_target_property(_include_dirs "${_target}" INCLUDE_DIRECTORIES)
+			foreach (_include ${_include_dirs})
+				get_filename_component(_include_dir "${_include}" REALPATH)
+				list(APPEND _include_path "${_include_dir}")
+			endforeach ()
+			list(REMOVE_DUPLICATES _include_path)
+			string(REPLACE ";" " " _include_path "${_include_path}")
+
 			_doxygen_target()
 		endforeach ()
 	endif ()
@@ -149,6 +157,14 @@ function (add_doxygen _TARGET_NAME)
 		endforeach ()
 
 		string(REPLACE ";" " " _source_files "${_sources_fullpath}")
+
+		get_directory_property(_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}" INCLUDE_DIRECTORIES)
+		foreach (_include ${_include_dirs})
+			get_filename_component(_include_dir "${_include}" REALPATH)
+			list(APPEND _include_path "${_include_dir}")
+		endforeach ()
+		list(REMOVE_DUPLICATES _include_path)
+		string(REPLACE ";" " " _include_path "${_include_path}")
 
 		_doxygen_target()
 	endif ()
