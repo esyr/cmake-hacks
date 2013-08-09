@@ -145,7 +145,7 @@ function (add_doxygen _TARGET_NAME)
 			COMMAND "${DOXYGEN_EXECUTABLE}" ARGS "${_doxyfile_path}"
 			COMMAND "${CMAKE_COMMAND}" ARGS -E touch "${_marker_path}"
 			DEPENDS ${_sources_list}
-		)
+			COMMENT "Building doxygen documentation for ${_target}")
 
 		list(APPEND _depend_targets "${_marker_path}")
 
