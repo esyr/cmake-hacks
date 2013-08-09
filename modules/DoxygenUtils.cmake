@@ -1,3 +1,5 @@
+include(GNUInstallDirs)
+
 set(_doxygen_utils_listfile_dir "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "Current list dir for doxygen utils module. Used for template discovery.")
 set(_doxygen_default_template_path "${_doxygen_utils_listfile_dir}/../templates/Doxyfile.template" CACHE INTERNAL "Path to default doxygen configuration template")
 
@@ -47,9 +49,10 @@ foreach (_format MAN HTML LATEX RTF)
 	endforeach ()
 endforeach ()
 
-function (add_doxygen _TARGET_NAME)
-	include(GNUInstallDirs)
 
+# add_doxygen(<name of doxygen target> [options])
+function (add_doxygen _TARGET_NAME)
+	# List of currently supported formats
 	set(_formats MAN HTML LATEX RTF)
 
 	# Setting format defaults
