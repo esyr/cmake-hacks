@@ -115,8 +115,27 @@ function (add_doxygen _TARGET_NAME)
 		set(_doxyfile_path "${_target_dir}/Doxyfile")
 		set(_marker_path "${_target_dir}/doxygen_build_marker_${_marker_hash}")
 
+		# Processing sources list
+		set(_sources_fullpath)
+		foreach (_source ${_sources_list})
+			get_filename_component(_source "${_source}" ABSOLUTE)
+			list(APPEND _sources_fullpath "${_source}")
+		endforeach ()
+
+		string(REPLACE ";" " " _source_files "${_sources_fullpath}")
+
+		# Processing include dirs
+		foreach (_include ${_include_dirs})
+			get_filename_component(_include_dir "${_include}" REALPATH)
+			list(APPEND _include_path "${_include_dir}")
+		endforeach ()
+		list(REMOVE_DUPLICATES _include_path)
+		string(REPLACE ";" " " _include_path "${_include_path}")
+
+		# Creating target directory
 		execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/${_target}_doxygen.dir")
 
+		# Generating template
 		configure_file("${_template}" ${CMAKE_CURRENT_BINARY_DIR}/${_target}_doxygen.dir/Doxyfile)
 
 		add_custom_command(
@@ -165,22 +184,7 @@ function (add_doxygen _TARGET_NAME)
 			endif ()
 
 			get_target_property(_sources_list "${_target}" SOURCES)
-
-			set(_sources_fullpath)
-			foreach (_source ${_sources_list})
-				get_filename_component(_source "${_source}" ABSOLUTE)
-				list(APPEND _sources_fullpath "${_source}")
-			endforeach ()
-
-			string(REPLACE ";" " " _source_files "${_sources_fullpath}")
-
 			get_target_property(_include_dirs "${_target}" INCLUDE_DIRECTORIES)
-			foreach (_include ${_include_dirs})
-				get_filename_component(_include_dir "${_include}" REALPATH)
-				list(APPEND _include_path "${_include_dir}")
-			endforeach ()
-			list(REMOVE_DUPLICATES _include_path)
-			string(REPLACE ";" " " _include_path "${_include_path}")
 
 			_doxygen_target()
 		endforeach ()
@@ -191,23 +195,8 @@ function (add_doxygen _TARGET_NAME)
 		set(_target_dir "${CMAKE_CURRENT_BINARY_DIR}/doxygen.dir")
 		set(_project_name "${GENERATE_DOXYGEN_PROJECT_NAME}")
 
-		get_target_property(_source_files "${GENERATE_DOXYGEN_FILES}")
-
-		set(_sources_fullpath)
-		foreach (_source ${_source_files})
-			get_filename_component(_source "${_source}" ABSOLUTE)
-			list(APPEND _sources_fullpath "${_source}")
-		endforeach ()
-
-		string(REPLACE ";" " " _source_files "${_sources_fullpath}")
-
+		set(_sources_list "${GENERATE_DOXYGEN_FILES}")
 		get_directory_property(_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}" INCLUDE_DIRECTORIES)
-		foreach (_include ${_include_dirs})
-			get_filename_component(_include_dir "${_include}" REALPATH)
-			list(APPEND _include_path "${_include_dir}")
-		endforeach ()
-		list(REMOVE_DUPLICATES _include_path)
-		string(REPLACE ";" " " _include_path "${_include_path}")
 
 		_doxygen_target()
 	endif ()
