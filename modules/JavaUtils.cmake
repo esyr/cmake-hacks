@@ -26,8 +26,6 @@ set(JAVA_STD_PATHS
 function (find_java_class _VAR _CLASS)
     set(_CLASS_FOUND 0)
 
-    message(STATUS "Looking for java class ${_CLASS}...")
-
     set(_find_file_paths
         ${JAVA_STD_PATHS}
         ${Java_JAR_PATHS})
@@ -35,6 +33,19 @@ function (find_java_class _VAR _CLASS)
         ${ARGN}
         ${_find_file_paths})
     set(_res_paths)
+
+    string(SHA256 _path_hash "${_find_paths}")
+
+    if (DEFINED _FIND_JAVA_CLASS_CACHE_${_CLASS}_${_path_hash})
+        #message(STATUS "Getting path for class ${_CLASS} from cache (Path hash: ${_path_hash}).")
+
+        set(${_VAR} "${_FIND_JAVA_CLASS_CACHE_${_CLASS}_${_path_hash}}" PARENT_SCOPE)
+
+        return ()
+    endif ()
+
+    message(STATUS "Looking for java class ${_CLASS}...")
+    set(_result_path)
 
     string(REGEX REPLACE "\\." "/" _needle "${_CLASS}")
     set(_needle "${_needle}.class")
@@ -75,6 +86,7 @@ function (find_java_class _VAR _CLASS)
         if ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
             message(STATUS "Found for ${_CLASS}: ${_CHECK_PATH}")
             set(${_VAR} "${_CHECK_PATH}" PARENT_SCOPE) # XXX or ${_prefix} ?
+            set(_result_path "${_CHECK_PATH}")
             set(_CLASS_FOUND 1)
             break()
         else ("${_prefix}${_needle}" EQUAL "${_CHECK_PATH}")
@@ -101,6 +113,7 @@ function (find_java_class _VAR _CLASS)
             if ("${_position}" GREATER -1)
                 message(STATUS "Found for ${_CLASS}: ${_CHECK_PATH}")
                 set(${_VAR} "${_CHECK_PATH}" PARENT_SCOPE)
+                set(_result_path "${_CHECK_PATH}")
                 set(_CLASS_FOUND 1)
                 break()
             endif ("${_position}" GREATER -1)
@@ -109,6 +122,8 @@ function (find_java_class _VAR _CLASS)
 
     if (NOT _CLASS_FOUND)
         message(STATUS "Class ${_CLASS} NOT found!")
+    else ()
+        set("_FIND_JAVA_CLASS_CACHE_${_CLASS}_${_path_hash}" "${_result_path}" CACHE INTERNAL "Cached path for class ${_CLASS}")
     endif (NOT _CLASS_FOUND)
 endfunction (find_java_class _VAR)
 
