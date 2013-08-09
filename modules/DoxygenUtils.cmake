@@ -167,13 +167,12 @@ function (add_doxygen _TARGET_NAME)
 				if ("${_format}" STREQUAL "MAN")
 					set(_install_params PATTERN "*${GENERATE_DOXYGEN_MAN_SECTION}" PATTERN "d[0-9a-f]" EXCLUDE PATTERN "d[0-9a-f][0-9a-f]" EXCLUDE)
 				else ()
-					set(_install_params "")
+					set(_install_params)
 				endif ()
 
 				install(DIRECTORY "${_src_dir}" DESTINATION "${_install_dir}" ${_install_params})
 			endif ()
 		endforeach ()
-
 	endmacro (_doxygen_target)
 
 	if (GENERATE_DOXYGEN_TARGETS)
