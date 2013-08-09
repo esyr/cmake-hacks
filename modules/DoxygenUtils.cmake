@@ -113,7 +113,6 @@ function (add_doxygen _TARGET_NAME)
 	macro (_doxygen_target)
 		set(_output_dir "${_target_dir}/doc/")
 		set(_doxyfile_path "${_target_dir}/Doxyfile")
-		set(_marker_path "${_target_dir}/doxygen_build_marker_${_marker_hash}")
 
 		# Processing sources list
 		set(_sources_fullpath)
@@ -137,6 +136,9 @@ function (add_doxygen _TARGET_NAME)
 
 		# Generating template
 		configure_file("${_template}" ${CMAKE_CURRENT_BINARY_DIR}/${_target}_doxygen.dir/Doxyfile)
+
+		string(SHA256 _target_hash "${_marker_hash};${_source_files};${_include_path}")
+		set(_marker_path "${_target_dir}/doxygen_build_marker_${_target_hash}")
 
 		add_custom_command(
 			OUTPUT "${_marker_path}"
