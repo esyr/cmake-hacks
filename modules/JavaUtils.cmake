@@ -345,6 +345,8 @@ function (find_classpath _VAR _MANIFEST_PATH)
         ${JAVA_STD_PATHS}
         ${Java_JAR_PATHS})
 
+    set(_title_message_shown 0)
+
     set(_classpath "")
     get_classpath(_classpath "${_MANIFEST_PATH}")
     get_abs_path(_MANIFEST_ABS_PATH "${_MANIFEST_PATH}" BASE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -397,11 +399,16 @@ function (find_classpath _VAR _MANIFEST_PATH)
                     endif (EXISTS "${_cpitem_abs_path}")
                 endif (NOT "${_cpitem_name}_cpitem_path" AND NOT FIND_CLASSPATH_LOCAL_FIRST)
 
+                if (NOT _title_message_shown)
+                    message(STATUS "Searching for classpath for ${_MANIFEST_PATH}:")
+                    set(_title_message_shown 1)
+                endif (NOT _title_message_shown)
+
                 if (NOT "${_cpitem_name}_cpitem_path")
                     # We should generate error regarding it somewhere
-                    message(STATUS "Searching for classpath for ${_MANIFEST_PATH}: NOT found ${_cpitem_name}")
+                    message(STATUS "    NOT found ${_cpitem_name}")
                 else (NOT "${_cpitem_name}_cpitem_path")
-                    message(STATUS "Searching for classpath for ${_MANIFEST_PATH}: found for ${_cpitem_name}: ${${_cpitem_name}_cpitem_path}")
+                    message(STATUS "    Found for ${_cpitem_name}: ${${_cpitem_name}_cpitem_path}")
                 endif (NOT "${_cpitem_name}_cpitem_path")
 
                 set(_result ${_result} "${_cpitem}=${${_cpitem_name}_cpitem_path}")
