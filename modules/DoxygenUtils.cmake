@@ -196,6 +196,11 @@ function (add_doxygen _TARGET_NAME)
 			endif ()
 
 			get_target_property(_sources_list "${_target}" SOURCES)
+			get_target_property(_headers_list "${_target}" HEADERS)
+			if (_headers_list)
+				list(APPEND _sources_list ${_headers_list})
+			endif ()
+
 			get_target_property(_include_dirs "${_target}" INCLUDE_DIRECTORIES)
 
 			_doxygen_target()
