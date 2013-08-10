@@ -128,6 +128,17 @@ function (add_doxygen _TARGET_NAME)
 			get_filename_component(_include_dir "${_include}" REALPATH)
 			list(APPEND _include_path "${_include_dir}")
 		endforeach ()
+
+		# XXX Hack: also including all implicit include dirs for all enabled
+		#     languages. I wish i can append include paths only for those
+		#     languages which actually used by the target, but as i understood
+		#     CMake provides no ability to retrieve such information (neither
+		#     per-target nor per-file basis)
+		get_property(_langs GLOBAL PROPERTY ENABLED_LANGUAGES)
+		foreach (_lang ${_langs})
+			list(APPEND _include_path ${CMAKE_${_lang}_IMPLICIT_INCLUDE_DIRECTORIES})
+		endforeach ()
+
 		list(REMOVE_DUPLICATES _include_path)
 		string(REPLACE ";" " " _include_path "${_include_path}")
 
