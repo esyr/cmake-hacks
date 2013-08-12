@@ -65,7 +65,7 @@ function (add_doxygen _TARGET_NAME)
 	endforeach ()
 
 	foreach (_format ${_formats})
-		list(APPEND _install_opts "${_format}_APPEND_TARGET_NAME" "${_format}_APPEND_SUBDIR")
+		list(APPEND _install_ova "${_format}_APPEND_TARGET_NAME" "${_format}_APPEND_SUBDIR")
 		list(APPEND _install_ova "${_format}_INSTALL_DIR" "${_format}_SUBDIR")
 	endforeach ()
 
