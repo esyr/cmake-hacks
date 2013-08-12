@@ -55,15 +55,6 @@ function (add_doxygen _TARGET_NAME)
 	# List of currently supported formats
 	set(_formats MAN HTML LATEX RTF)
 
-	# Setting format defaults
-	set(_param_defaults)
-	foreach (_format ${_formats})
-		foreach (_opt SUBDIR INSTALL_DIR APPEND_TARGET_NAME APPEND_SUBDIR)
-			set(GENERATE_DOXYGEN_${_format}_${_opt} "${CMAKE_DOC_${_format}_${_opt}}")
-			set(_param_defaults "${_param_defaults}|${CMAKE_DOC_${_format}_${_opt}}")
-		endforeach ()
-	endforeach ()
-
 	foreach (_format ${_formats})
 		list(APPEND _install_ova "${_format}_APPEND_TARGET_NAME" "${_format}_APPEND_SUBDIR")
 		list(APPEND _install_ova "${_format}_INSTALL_DIR" "${_format}_SUBDIR")
@@ -77,6 +68,17 @@ function (add_doxygen _TARGET_NAME)
 		"${_OneValueArgs}"
 		"${_MultiValueArgs}"
 		${ARGN})
+
+	# Setting format defaults
+	set(_param_defaults)
+	foreach (_format ${_formats})
+		foreach (_opt SUBDIR INSTALL_DIR APPEND_TARGET_NAME APPEND_SUBDIR)
+			if (NOT DEFINED GENERATE_DOXYGEN_${_format}_${_opt})
+				set(GENERATE_DOXYGEN_${_format}_${_opt} "${CMAKE_DOC_${_format}_${_opt}}")
+			endif ()
+			set(_param_defaults "${_param_defaults}|${CMAKE_DOC_${_format}_${_opt}}")
+		endforeach ()
+	endforeach ()
 
 	find_package(Doxygen REQUIRED)
 
