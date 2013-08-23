@@ -127,8 +127,6 @@ function (find_java_class _VAR _CLASS)
     endif (NOT _CLASS_FOUND)
 endfunction (find_java_class _VAR)
 
-set(_PDE_BUILD_SUBDIR pde)
-
 function (add_eclipse_plugin _TARGET_NAME _FEATURE)
     set(_Options LOCAL_FIRST)
     set(_OneValueArgs "")
@@ -139,10 +137,13 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         "${_MultiValueArgs}"
         ${ARGN})
 
-    set(_ECLIPSE_PLUGIN_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR})
+    set(_ECLIPSE_PLUGIN_ROOT "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_pdebuild.dir")
+    set(_PDE_BUILD_SUBDIR pde)
+
+    set(_ECLIPSE_PLUGIN_BUILD_DIR ${_ECLIPSE_PLUGIN_ROOT}/${_PDE_BUILD_SUBDIR})
     set(_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME "${_TARGET_NAME}.zip")
-    set(_ECLIPSE_PLUGIN_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/${_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME})
-    set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_dir)
+    set(_ECLIPSE_PLUGIN_OUTPUT_PATH ${_ECLIPSE_PLUGIN_ROOT}/${_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME})
+    set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${_ECLIPSE_PLUGIN_ROOT}/${_TARGET_NAME}.dir)
 
     find_program(_PDE_BUILD_EXECUTABLE
         NAMES pdebuild pde-build
@@ -166,29 +167,29 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*"
         "${CMAKE_CURRENT_SOURCE_DIR}/features/*")
 
-    add_custom_target(
-        "${_TARGET_NAME}_prepare"
-        #COMMAND "${CMAKE_COMMAND}" -E echo "Removing dirs"
-        COMMAND "${CMAKE_COMMAND}" -E remove
-            "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
+    string(SHA256 _marker_hash "${ARGN}|${${_TARGET_NAME}_SOURCES}|${_PDE_BUILD_EXECUTABLE}|${_UNZIP_EXECUTABLE}")
+
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
         COMMAND "${CMAKE_COMMAND}" -E remove_directory
-            "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
-        COMMAND "${CMAKE_COMMAND}" -E remove_directory
-            "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}"
+            "${_ECLIPSE_PLUGIN_ROOT}"
         COMMAND "${CMAKE_COMMAND}" -E make_directory
-            "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}"
+            "${_ECLIPSE_PLUGIN_ROOT}"
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
         COMMENT "Preparing to build ${_TARGET_NAME}.zip - recreating build directory."
         DEPENDS ${${_TARGET_NAME}_SOURCES}
     )
 
-    add_custom_target(
-        "${_TARGET_NAME}_make_build_dir"
-        #COMMAND "${CMAKE_COMMAND}" -E echo "Copying dirs"
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins" "${_ECLIPSE_PLUGIN_BUILD_DIR}/plugins"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/features" "${_ECLIPSE_PLUGIN_BUILD_DIR}/features"
-        DEPENDS "${_TARGET_NAME}_prepare" ${AEP_DEPS}
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}" ${AEP_DEPS}
     )
 
     set(_dep_paths "")
@@ -212,23 +213,24 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
             string(REPLACE "/" "_" _dst_path_name "${_dst_path_name}")
             get_filename_component(_dst_dir "${_dst_path}" PATH)
 
-            add_custom_target(
-                "${_TARGET_NAME}_${_dst_path_name}"
-                COMMAND "${CMAKE_COMMAND}" -E echo "Copying ${_src_path} to ${_dst_path}"
+            add_custom_command(
+                OUTPUT "${_dst_path}"
                 COMMAND "${CMAKE_COMMAND}" -E make_directory
                     "${_dst_dir}"
                 COMMAND "${CMAKE_COMMAND}" -E copy
                     "${_src_path}" "${_dst_path}"
-                DEPENDS "${_TARGET_NAME}_make_build_dir" "${_src_path}"
+                DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}" "${_src_path}"
             )
 
-            list(APPEND _dep_paths "${_TARGET_NAME}_${_dst_path_name}")
+            list(APPEND _dep_paths "${_dst_path}")
         endforeach (spec ${cp_paths})
     endforeach(_MANIFEST_PATH ${${_TARGET_NAME}_MANIFESTS})
 
-    add_custom_target(
-        "${_TARGET_NAME}_copy_deps"
-        DEPENDS "${_TARGET_NAME}_make_build_dir" ${_dep_paths}
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_copy_deps_marker_${_marker_hash}"
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_copy_deps_marker_${_marker_hash}"
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}" ${_dep_paths}
     )
 
     add_custom_command(
@@ -238,29 +240,32 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         WORKING_DIRECTORY "${_ECLIPSE_PLUGIN_BUILD_DIR}/"
         COMMAND "${CMAKE_COMMAND}" -E copy
             "${_ECLIPSE_PLUGIN_BUILD_DIR}/build/rpmBuild/${_FEATURE}.zip" "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
-        DEPENDS "${_TARGET_NAME}_copy_deps"
         COMMENT "Building ${_TARGET_NAME}.zip"
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_copy_deps_marker_${_marker_hash}"
     )
 
-    add_custom_target(
-        "${_TARGET_NAME}_unpack_prepare"
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_prepare_marker_${_marker_hash}"
         COMMAND "${CMAKE_COMMAND}" -E make_directory
             "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
-        DEPENDS "${_TARGET_NAME}_prepare"
-        COMMENT "Creating ${_TARGET_NAME} unpack destination dir."
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_prepare_marker_${_marker_hash}"
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
     )
 
-    add_custom_target(
-        "${_TARGET_NAME}_unpack"
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_marker_${_marker_hash}"
         COMMAND "${_UNZIP_EXECUTABLE}"
             "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
         WORKING_DIRECTORY "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
-        DEPENDS "${_TARGET_NAME}_unpack_prepare" ${_ECLIPSE_PLUGIN_OUTPUT_PATH}
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_marker_${_marker_hash}"
         COMMENT "Unpacking ${_TARGET_NAME}.zip."
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_prepare_marker_${_marker_hash}" ${_ECLIPSE_PLUGIN_OUTPUT_PATH}
     )
 
     add_custom_target(${_TARGET_NAME} ALL
-        DEPENDS ${_ECLIPSE_PLUGIN_OUTPUT_PATH} "${_TARGET_NAME}_unpack"
+        DEPENDS ${_ECLIPSE_PLUGIN_OUTPUT_PATH} "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_marker_${_marker_hash}"
     )
 
     install_eclipse_plugin(${_TARGET_NAME} ${ARGN})
@@ -282,7 +287,8 @@ function (install_eclipse_plugin _TARGET_NAME)
         set(_install_path "${CMAKE_INSTALL_DATADIR}/eclipse/dropins/${_TARGET_NAME}/")
     endif (IEP_INSTALL_PATH)
 
-    set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_dir)
+    set(_ECLIPSE_PLUGIN_ROOT "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_pdebuild.dir")
+    set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${_ECLIPSE_PLUGIN_ROOT}/${_TARGET_NAME}.dir)
 
     include(GNUInstallDirs)
 
