@@ -162,6 +162,10 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         message(SEND_ERROR "_UNZIP_EXECUTABLE is not set and can't find unzip executable myself. Aborting.")
     endif (NOT _UNZIP_EXECUTABLE)
 
+    file(GLOB_RECURSE ${_TARGET_NAME}_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*"
+        "${CMAKE_CURRENT_SOURCE_DIR}/features/*")
+
     add_custom_target(
         "${_TARGET_NAME}_prepare"
         #COMMAND "${CMAKE_COMMAND}" -E echo "Removing dirs"
@@ -174,12 +178,8 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         COMMAND "${CMAKE_COMMAND}" -E make_directory
             "${CMAKE_CURRENT_BINARY_DIR}/${_PDE_BUILD_SUBDIR}"
         COMMENT "Preparing to build ${_TARGET_NAME}.zip - recreating build directory."
-        DEPENDS ${${_TARGET}_SOURCES}
+        DEPENDS ${${_TARGET_NAME}_SOURCES}
     )
-
-    file(GLOB_RECURSE ${_TARGET}_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*"
-        "${CMAKE_CURRENT_SOURCE_DIR}/features/*")
 
     add_custom_target(
         "${_TARGET_NAME}_make_build_dir"
