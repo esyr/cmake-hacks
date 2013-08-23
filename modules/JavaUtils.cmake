@@ -144,8 +144,6 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
     set(_ECLIPSE_PLUGIN_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/${_ECLIPSE_PLUGIN_TARGET_OUTPUT_NAME})
     set(_ECLIPSE_PLUGIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}_dir)
 
-    file(GLOB_RECURSE ${_TARGET_NAME}_MANIFESTS MANIFEST.MF)
-
     find_program(_PDE_BUILD_EXECUTABLE
         NAMES pdebuild pde-build
         PATHS /usr/lib64/eclipse/buildscripts/
@@ -161,6 +159,8 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
     if (NOT _UNZIP_EXECUTABLE)
         message(SEND_ERROR "_UNZIP_EXECUTABLE is not set and can't find unzip executable myself. Aborting.")
     endif (NOT _UNZIP_EXECUTABLE)
+
+    file(GLOB_RECURSE ${_TARGET_NAME}_MANIFESTS MANIFEST.MF)
 
     file(GLOB_RECURSE ${_TARGET_NAME}_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*"
