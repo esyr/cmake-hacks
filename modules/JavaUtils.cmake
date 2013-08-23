@@ -189,6 +189,7 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
             "${CMAKE_CURRENT_SOURCE_DIR}/features" "${_ECLIPSE_PLUGIN_BUILD_DIR}/features"
         COMMAND "${CMAKE_COMMAND}" -E touch
             "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
+        COMMENT "Building ${_TARGET_NAME}.zip - copying source directories into build tree."
         DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}" ${AEP_DEPS}
     )
 
@@ -219,6 +220,7 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
                     "${_dst_dir}"
                 COMMAND "${CMAKE_COMMAND}" -E copy
                     "${_src_path}" "${_dst_path}"
+                COMMENT "Building ${_TARGET_NAME}.zip - copying ${_src_path} to ${_dst_path}."
                 DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}" "${_src_path}"
             )
 
@@ -230,6 +232,7 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
         OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_copy_deps_marker_${_marker_hash}"
         COMMAND "${CMAKE_COMMAND}" -E touch
             "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_copy_deps_marker_${_marker_hash}"
+        COMMENT "Building ${_TARGET_NAME}.zip - copying dependencies into builddir."
         DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}" ${_dep_paths}
     )
 
@@ -250,6 +253,7 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
             "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
         COMMAND "${CMAKE_COMMAND}" -E touch
             "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_prepare_marker_${_marker_hash}"
+        COMMENT "Building ${_TARGET_NAME} - creating unpack destination dir."
         DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
     )
 
@@ -265,6 +269,7 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
     )
 
     add_custom_target(${_TARGET_NAME} ALL
+        COMMENT "Building ${_TARGET_NAME} eclipse plugin"
         DEPENDS ${_ECLIPSE_PLUGIN_OUTPUT_PATH} "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_marker_${_marker_hash}"
     )
 
