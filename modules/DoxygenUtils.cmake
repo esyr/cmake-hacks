@@ -40,11 +40,14 @@ set(CMAKE_DOC_RTF_APPEND_TARGET_NAME 1
 set(CMAKE_DOC_RTF_APPEND_SUBDIR 1
 	CACHE BOOL "Append RTF subdir to the documentation installation path")
 
+set(_doc_format_opts SUBDIR INSTALL_DIR APPEND_TARGET_NAME APPEND_SUBDIR
+	CACHE INTERNAL "Internal variable holding documentation format option list")
+
 set(CMAKE_DOC_DOXYGEN_QUIET 1
 	CACHE BOOL "Run doxygen quietly")
 
 foreach (_format MAN HTML LATEX RTF)
-	foreach (_opt SUBDIR INSTALL_DIR APPEND_TARGET_NAME APPEND_SUBDIR)
+	foreach (_opt ${_doc_format_opts})
 		mark_as_advanced(CMAKE_DOC_${_format}_${_opt})
 	endforeach ()
 endforeach ()
@@ -56,8 +59,9 @@ function (add_doxygen _TARGET_NAME)
 	set(_formats MAN HTML LATEX RTF)
 
 	foreach (_format ${_formats})
-		list(APPEND _install_ova "${_format}_APPEND_TARGET_NAME" "${_format}_APPEND_SUBDIR")
-		list(APPEND _install_ova "${_format}_INSTALL_DIR" "${_format}_SUBDIR")
+		foreach (_opt ${_doc_format_opts})
+			list(APPEND _install_ova "${_format}_${_opt}")
+		endforeach ()
 	endforeach ()
 
 	set(_Options ${_formats} ${_install_opts})
@@ -72,7 +76,7 @@ function (add_doxygen _TARGET_NAME)
 	# Setting format defaults
 	set(_param_defaults)
 	foreach (_format ${_formats})
-		foreach (_opt SUBDIR INSTALL_DIR APPEND_TARGET_NAME APPEND_SUBDIR)
+		foreach (_opt ${_doc_format_opts})
 			if (NOT DEFINED GENERATE_DOXYGEN_${_format}_${_opt})
 				set(GENERATE_DOXYGEN_${_format}_${_opt} "${CMAKE_DOC_${_format}_${_opt}}")
 			endif ()
