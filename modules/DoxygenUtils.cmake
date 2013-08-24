@@ -80,7 +80,7 @@ function (add_doxygen _TARGET_NAME)
 			if (NOT DEFINED GENERATE_DOXYGEN_${_format}_${_opt})
 				set(GENERATE_DOXYGEN_${_format}_${_opt} "${CMAKE_DOC_${_format}_${_opt}}")
 			endif ()
-			set(_param_defaults "${_param_defaults}|${CMAKE_DOC_${_format}_${_opt}}")
+			set(_param_defaults "${_param_defaults}|${GENERATE_DOXYGEN_${_format}_${_opt}}")
 		endforeach ()
 	endforeach ()
 
