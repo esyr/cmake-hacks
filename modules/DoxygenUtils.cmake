@@ -52,6 +52,64 @@ foreach (_format MAN HTML LATEX RTF)
 	endforeach ()
 endforeach ()
 
+set(CMAKE_DOC_CREATE_MAIN_TARGET 1
+	CACHE BOOL "Automatically create main documantation target if there's not any")
+set(CMAKE_DOC_MAIN_TARGET_NAME "doc"
+	CACHE STRING "Name of the main documentation target")
+set(CMAKE_DOC_MAIN_TARGET_ADD_TO_ALL 1
+	CACHE BOOL "Add main documentation to the 'all' target in case of creating")
+set(_doc_main_target_opts
+	CREATE_MAIN_TARGET MAIN_TARGET_ADD_TO_ALL MAIN_TARGET_NAME
+	CACHE INTERNAL "Internal variable holding list of options raletad to the main documentation target")
+
+foreach (_opt ${_doc_main_target_opts})
+	mark_as_advanced(CMAKE_DOC_${_opt})
+endforeach ()
+
+set(CMAKE_DOC_DOXYGEN_TARGETS_ADD_TO_ALL 1
+	CACHE BOOL "Add doxygen main targets to the 'all' target")
+set(CMAKE_DOC_DOXYGEN_ADD_MAIN_DEPEND 1
+	CACHE BOOL "Add dependency to 'doc' target on each newly-added doxygen target")
+
+mark_as_advanced(
+	CMAKE_DOC_DOXYGEN_TARGETS_ADD_TO_ALL
+	CMAKE_DOC_DOXYGEN_ADD_MAIN_DEPEND)
+
+# update_doc_target(<options> TARGETS <targets>)
+function (update_doc_main_target)
+	set(_Options)
+	set(_OneValueArgs ${_doc_main_target_opts})
+	set(_MultiValueArgs TARGETS)
+	cmake_parse_arguments(UDMT
+		"${_Options}"
+		"${_OneValueArgs}"
+		"${_MultiValueArgs}"
+		${ARGN})
+
+	foreach (_ova ${_doc_main_target_opts})
+		if (NOT DEFINED UDMT_${ova})
+			set(UDMT_${_ova} "${CMAKE_DOC_${_ova}}")
+		endif ()
+	endforeach ()
+
+	if (UDMT_MAIN_TARGET_ADD_TO_ALL)
+		set(_all_opt "ALL")
+	else ()
+		set(_all_opt)
+	endif ()
+
+	if (NOT TARGET "${UDMT_MAIN_TARGET_NAME}")
+		if (NOT UDMT_CREATE_MAIN_TARGET)
+			return()
+		endif ()
+
+		add_custom_target("${UDMT_MAIN_TARGET_NAME}" ${_all_opt}
+			DEPENDS ${UDMT_TARGETS}
+			COMMENT "Main documentation target")
+	else ()
+		add_dependencies("${UDMT_MAIN_TARGET_NAME}" ${UDMT_TARGETS})
+	endif ()
+endfunction ()
 
 # add_doxygen(<name of doxygen target> [options])
 function (add_doxygen _TARGET_NAME)
@@ -65,7 +123,10 @@ function (add_doxygen _TARGET_NAME)
 	endforeach ()
 
 	set(_Options ${_formats} ${_install_opts})
-	set(_OneValueArgs MAN_SECTION TEMPLATE PROJECT_NAME FILES_TARGET_NAME ${_install_ova} QUIET)
+	set(_OneValueArgs
+		MAN_SECTION TEMPLATE PROJECT_NAME FILES_TARGET_NAME QUIET
+		ADD_TO_ALL ADD_TO_MAIN
+		${_doc_main_target_opts} ${_install_ova})
 	set(_MultiValueArgs TARGETS FILES)
 	cmake_parse_arguments(GENERATE_DOXYGEN
 		"${_Options}"
@@ -83,6 +144,21 @@ function (add_doxygen _TARGET_NAME)
 			set(_param_defaults "${_param_defaults}|${GENERATE_DOXYGEN_${_format}_${_opt}}")
 		endforeach ()
 	endforeach ()
+
+	foreach (_opt ${_doc_main_target_opts})
+		if (NOT DEFINED GENERATE_DOXYGEN_${opt})
+			set(GENERATE_DOXYGEN_${_opt} "${CMAKE_DOC_${_opt}}")
+		endif ()
+		set(_param_defaults "${_param_defaults}|${GENERATE_DOXYGEN_${_format}_${_opt}}")
+	endforeach ()
+
+	if (NOT DEFINED GENERATE_DOXYGEN_ADD_TO_ALL)
+		set(GENERATE_DOXYGEN_ADD_TO_ALL	"${CMAKE_DOC_DOXYGEN_TARGETS_ADD_TO_ALL}")
+	endif ()
+
+	if (NOT DEFINED GENERATE_DOXYGEN_ADD_TO_MAIN)
+		set(GENERATE_DOXYGEN_ADD_TO_MAIN "${CMAKE_DOC_DOXYGEN_ADD_MAIN_DEPEND}")
+	endif ()
 
 	find_package(Doxygen REQUIRED)
 
@@ -224,6 +300,23 @@ function (add_doxygen _TARGET_NAME)
 		_doxygen_target()
 	endif ()
 
-	add_custom_target("${_TARGET_NAME}" ALL DEPENDS ${_depend_targets})
+	if (GENERATE_DOXYGEN_ADD_TO_ALL)
+		set(_all_opt "ALL")
+	else ()
+		set(_all_opt)
+	endif ()
+
+	add_custom_target("${_TARGET_NAME}" ${_all_opt} DEPENDS ${_depend_targets})
+
+	if (GENERATE_DOXYGEN_ADD_TO_MAIN)
+		set(_udmt_opts)
+		foreach (_opt ${_doc_main_target_opts})
+			if (DEFINED GENERATE_DOXYGEN_${_opt})
+				list(APPEND _udmt_opts ${_opt} "${GENERATE_DOXYGEN_${_opt}}")
+			endif ()
+		endforeach ()
+
+		update_doc_main_target(${_udmt_opts} TARGETS "${_TARGET_NAME}")
+	endif ()
 endfunction (add_doxygen _TARGET_NAME)
 
