@@ -43,13 +43,27 @@ set(CMAKE_DOC_RTF_APPEND_SUBDIR 1
 set(_doc_format_opts SUBDIR INSTALL_DIR APPEND_TARGET_NAME APPEND_SUBDIR
 	CACHE INTERNAL "Internal variable holding documentation format option list")
 
-set(CMAKE_DOC_DOXYGEN_QUIET 1
-	CACHE BOOL "Run doxygen quietly")
+set(_doc_formats MAN HTML LATEX RTF
+	CACHE INTERNAL "List of known documentation formats (currently equivalent to Doxygen-supported formats)")
 
-foreach (_format MAN HTML LATEX RTF)
+set(_doc_formats_opts)
+foreach (_format ${_doc_formats})
 	foreach (_opt ${_doc_format_opts})
 		mark_as_advanced(CMAKE_DOC_${_format}_${_opt})
+		list(APPEND _doc_formats_opts "${_format}_${_opt}")
 	endforeach ()
+endforeach ()
+
+set(CMAKE_DOC_DOXYGEN_QUIET 1
+	CACHE BOOL "Run doxygen quietly")
+set(CMAKE_DOC_DOXYGEN_MAN_SECTION 3
+	CACHE BOOL "Run doxygen quietly")
+set(_doc_doxygen_opts
+	QUIET MAN_SECTION
+	CACHE INTERNAL "Internal variable holding list of options relatad to the add_doxygen function")
+
+foreach (_opt ${_doc_doxygen_opts})
+	mark_as_advanced(CMAKE_DOC_DOXYGEN_${_opt})
 endforeach ()
 
 set(CMAKE_DOC_CREATE_MAIN_TARGET 1
@@ -60,7 +74,7 @@ set(CMAKE_DOC_MAIN_TARGET_ADD_TO_ALL 1
 	CACHE BOOL "Add main documentation to the 'all' target in case of creating")
 set(_doc_main_target_opts
 	CREATE_MAIN_TARGET MAIN_TARGET_ADD_TO_ALL MAIN_TARGET_NAME
-	CACHE INTERNAL "Internal variable holding list of options raletad to the main documentation target")
+	CACHE INTERNAL "Internal variable holding list of options relatad to the main documentation target")
 
 foreach (_opt ${_doc_main_target_opts})
 	mark_as_advanced(CMAKE_DOC_${_opt})
@@ -114,11 +128,11 @@ endfunction ()
 # add_doxygen(<name of doxygen target> [options])
 function (add_doxygen _TARGET_NAME)
 	# List of currently supported formats
-	set(_formats MAN HTML LATEX RTF)
+	set(_formats ${_doc_formats})
 
 	foreach (_format ${_formats})
 		foreach (_opt ${_doc_format_opts})
-			list(APPEND _install_ova "${_format}_${_opt}")
+			list(APPEND _format_opts "${_format}_${_opt}")
 		endforeach ()
 	endforeach ()
 
@@ -126,7 +140,7 @@ function (add_doxygen _TARGET_NAME)
 	set(_OneValueArgs
 		MAN_SECTION TEMPLATE PROJECT_NAME FILES_TARGET_NAME QUIET
 		ADD_TO_ALL ADD_TO_MAIN
-		${_doc_main_target_opts} ${_install_ova})
+		${_doc_main_target_opts} ${_format_opts})
 	set(_MultiValueArgs TARGETS FILES)
 	cmake_parse_arguments(GENERATE_DOXYGEN
 		"${_Options}"
@@ -134,22 +148,11 @@ function (add_doxygen _TARGET_NAME)
 		"${_MultiValueArgs}"
 		${ARGN})
 
-	# Setting format defaults
-	set(_param_defaults)
-	foreach (_format ${_formats})
-		foreach (_opt ${_doc_format_opts})
-			if (NOT DEFINED GENERATE_DOXYGEN_${_format}_${_opt})
-				set(GENERATE_DOXYGEN_${_format}_${_opt} "${CMAKE_DOC_${_format}_${_opt}}")
-			endif ()
-			set(_param_defaults "${_param_defaults}|${GENERATE_DOXYGEN_${_format}_${_opt}}")
-		endforeach ()
-	endforeach ()
-
-	foreach (_opt ${_doc_main_target_opts})
+	# Setting options defaults
+	foreach (_opt ${_format_opts} ${_doc_main_target_opts} ${_doc_doxygen_opts})
 		if (NOT DEFINED GENERATE_DOXYGEN_${opt})
 			set(GENERATE_DOXYGEN_${_opt} "${CMAKE_DOC_${_opt}}")
 		endif ()
-		set(_param_defaults "${_param_defaults}|${GENERATE_DOXYGEN_${_format}_${_opt}}")
 	endforeach ()
 
 	if (NOT DEFINED GENERATE_DOXYGEN_ADD_TO_ALL)
@@ -160,23 +163,23 @@ function (add_doxygen _TARGET_NAME)
 		set(GENERATE_DOXYGEN_ADD_TO_MAIN "${CMAKE_DOC_DOXYGEN_ADD_MAIN_DEPEND}")
 	endif ()
 
-	find_package(Doxygen REQUIRED)
-
 	if (GENERATE_DOXYGEN_TEMPLATE)
 		set(_template "${GENERATE_DOXYGEN_TEMPLATE}")
 	else ()
 		set(_template "${_doxygen_default_template_path}")
 	endif ()
 
-	if (NOT DEFINED GENERATE_DOXYGEN_QUIET)
-		set(GENERATE_DOXYGEN_QUIET "${CMAKE_DOC_DOXYGEN_QUIET}")
-	endif ()
+	# Constructing hash source - parameters
+	set(_param_defaults)
+	foreach (_opt ${_OneValueArgs})
+		set(_param_defaults "${_param_defaults}|${GENERATE_DOXYGEN_${_opt}}")
+	endforeach ()
 
 	# Otherwise changes in configuration but not in sources would not be noticed
 	file(SHA256 "${_template}" _template_hash)
 	string(SHA256 _marker_hash "${_TARGET_NAME}|${_param_defaults}|${ARGN}|${_template_hash}")
 
-	# Making format vars in doxygen format
+	# Making options used in template doxygen-friendly
 	foreach (_opt ${_formats} QUIET)
 		if (GENERATE_DOXYGEN_${_opt})
 			set(GENERATE_DOXYGEN_${_opt} "YES")
@@ -185,12 +188,10 @@ function (add_doxygen _TARGET_NAME)
 		endif ()
 	endforeach ()
 
-	if (NOT GENERATE_DOXYGEN_MAN_SECTION)
-		set(GENERATE_DOXYGEN_MAN_SECTION "3")
-	endif ()
-
 	set(GENERATE_DOXYGEN_MAN_SECTION ".${GENERATE_DOXYGEN_MAN_SECTION}")
 	set(_target_root_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+
+	find_package(Doxygen REQUIRED)
 
 	macro (_doxygen_target)
 		set(_output_dir "${_target_dir}/doc/")
