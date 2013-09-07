@@ -150,7 +150,7 @@ function (add_doxygen _TARGET_NAME)
 
 	# Setting options defaults
 	foreach (_opt ${_format_opts} ${_doc_main_target_opts} ${_doc_doxygen_opts})
-		if (NOT DEFINED GENERATE_DOXYGEN_${opt})
+		if (NOT DEFINED GENERATE_DOXYGEN_${_opt})
 			set(GENERATE_DOXYGEN_${_opt} "${CMAKE_DOC_${_opt}}")
 		endif ()
 	endforeach ()
