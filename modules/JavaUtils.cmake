@@ -169,30 +169,6 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
 
     string(SHA256 _marker_hash "${ARGN}|${${_TARGET_NAME}_SOURCES}|${_PDE_BUILD_EXECUTABLE}|${_UNZIP_EXECUTABLE}")
 
-    add_custom_command(
-        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
-        COMMAND "${CMAKE_COMMAND}" -E remove_directory
-            "${_ECLIPSE_PLUGIN_ROOT}"
-        COMMAND "${CMAKE_COMMAND}" -E make_directory
-            "${_ECLIPSE_PLUGIN_ROOT}"
-        COMMAND "${CMAKE_COMMAND}" -E touch
-            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
-        COMMENT "Preparing to build ${_TARGET_NAME}.zip - recreating build directory."
-        DEPENDS ${${_TARGET_NAME}_SOURCES}
-    )
-
-    add_custom_command(
-        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins" "${_ECLIPSE_PLUGIN_BUILD_DIR}/plugins"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/features" "${_ECLIPSE_PLUGIN_BUILD_DIR}/features"
-        COMMAND "${CMAKE_COMMAND}" -E touch
-            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
-        COMMENT "Building ${_TARGET_NAME}.zip - copying source directories into build tree."
-        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}" ${AEP_DEPS}
-    )
-
     set(_dep_paths "")
 
     foreach(_MANIFEST_PATH ${${_TARGET_NAME}_MANIFESTS})
@@ -224,9 +200,34 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
                 DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}" "${_src_path}"
             )
 
+            list(APPEND _dep_src_paths "${_src_path}")
             list(APPEND _dep_paths "${_dst_path}")
         endforeach (spec ${cp_paths})
     endforeach(_MANIFEST_PATH ${${_TARGET_NAME}_MANIFESTS})
+
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
+        COMMAND "${CMAKE_COMMAND}" -E remove_directory
+            "${_ECLIPSE_PLUGIN_ROOT}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+            "${_ECLIPSE_PLUGIN_ROOT}"
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
+        COMMENT "Preparing to build ${_TARGET_NAME}.zip - recreating build directory."
+        DEPENDS ${${_TARGET_NAME}_SOURCES} ${_dep_src_paths}
+    )
+
+    add_custom_command(
+        OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins" "${_ECLIPSE_PLUGIN_BUILD_DIR}/plugins"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/features" "${_ECLIPSE_PLUGIN_BUILD_DIR}/features"
+        COMMAND "${CMAKE_COMMAND}" -E touch
+            "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_make_build_dir_marker_${_marker_hash}"
+        COMMENT "Building ${_TARGET_NAME}.zip - copying source directories into build tree."
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}" ${AEP_DEPS}
+    )
 
     add_custom_command(
         OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_copy_deps_marker_${_marker_hash}"
@@ -249,12 +250,14 @@ function (add_eclipse_plugin _TARGET_NAME _FEATURE)
 
     add_custom_command(
         OUTPUT "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_prepare_marker_${_marker_hash}"
+        COMMAND "${CMAKE_COMMAND}" -E remove_directory
+            "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
         COMMAND "${CMAKE_COMMAND}" -E make_directory
             "${_ECLIPSE_PLUGIN_OUTPUT_DIR}"
         COMMAND "${CMAKE_COMMAND}" -E touch
             "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_unpack_prepare_marker_${_marker_hash}"
         COMMENT "Building ${_TARGET_NAME} - creating unpack destination dir."
-        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}"
+        DEPENDS "${_ECLIPSE_PLUGIN_ROOT}/pdebuild_prepare_marker_${_marker_hash}" "${_ECLIPSE_PLUGIN_OUTPUT_PATH}"
     )
 
     add_custom_command(
