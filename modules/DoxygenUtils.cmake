@@ -197,6 +197,9 @@ function (add_doxygen _TARGET_NAME)
 	set(GENERATE_DOXYGEN_MAN_SECTION ".${GENERATE_DOXYGEN_MAN_SECTION}")
 	set(_target_root_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
+	# Use source directory's parent dir as include strip path
+	get_filename_component(_target_root_inc_dir "${CMAKE_CURRENT_SOURCE_DIR}" PATH)
+
 	find_package(Doxygen REQUIRED)
 
 	macro (_doxygen_target)
