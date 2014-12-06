@@ -1,0 +1,10 @@
+CMake hacks collection
+======================
+
+This is a collection of various CMake hacks written during maintenance of
+various CMake-based projects.
+
+ * JavaUtils: support of Java in CMake has a number of significant gaps. This
+   module fills some of them.
+ * DoxygenUtils: some tools for building doxygen documentation in CMake-based
+   projects.
