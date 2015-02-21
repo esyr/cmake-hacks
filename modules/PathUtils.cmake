@@ -1,26 +1,26 @@
 # get_abs_path(<varname> <path> BASE <basepath>)
 function (get_abs_path _VAR _PATH)
-	include(CMakeParseArguments)
+    include(CMakeParseArguments)
 
-	set(_Options "")
-	set(_OneValueArgs BASE)
-	set(_MultiValueArgs "")
-	cmake_parse_arguments(GET_ABS_PATH
-		"${_Options}"
-		"${_OneValueArgs}"
-		"${_MultiValueArgs}"
-		${ARGN}
-	)
+    set(_Options "")
+    set(_OneValueArgs BASE)
+    set(_MultiValueArgs "")
+    cmake_parse_arguments(GET_ABS_PATH
+        "${_Options}"
+        "${_OneValueArgs}"
+        "${_MultiValueArgs}"
+        ${ARGN}
+    )
 
-	set(_result "")
+    set(_result "")
 
-	if (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
-		get_filename_component(_result "${GET_ABS_PATH_BASE}/${_PATH}" REALPATH)
-	else (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
-		get_filename_component(_result "${_PATH}" REALPATH)
-	endif (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
+    if (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
+        get_filename_component(_result "${GET_ABS_PATH_BASE}/${_PATH}" REALPATH)
+    else (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
+        get_filename_component(_result "${_PATH}" REALPATH)
+    endif (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
 
-	set(${_VAR} "${_result}" PARENT_SCOPE)
+    set(${_VAR} "${_result}" PARENT_SCOPE)
 endfunction (get_abs_path _VAR _PATH)
 
 # get_rel_path(<varname> <base> <path> [BASE <base_base>])
@@ -28,22 +28,22 @@ endfunction (get_abs_path _VAR _PATH)
 # before calling it, which allows coping with some erroneous behaviour of this
 # call.
 function (get_rel_path _VAR _BASE _PATH)
-	include(CMakeParseArguments)
+    include(CMakeParseArguments)
 
-	set(_Options)
-	set(_OneValueArgs BASE)
-	set(_MultiValueArgs)
+    set(_Options)
+    set(_OneValueArgs BASE)
+    set(_MultiValueArgs)
 
     foreach (_arg in ${_Options} ${_OneValueArgs} ${_MultiValueArgs})
         unset("GET_REL_PATH_${_arg}")
     endforeach ()
 
-	cmake_parse_arguments(GET_REL_PATH
-		"${_Options}"
-		"${_OneValueArgs}"
-		"${_MultiValueArgs}"
-		${ARGN}
-	)
+    cmake_parse_arguments(GET_REL_PATH
+        "${_Options}"
+        "${_OneValueArgs}"
+        "${_MultiValueArgs}"
+        ${ARGN}
+    )
 
     if (NOT ("${_BASE}" MATCHES "^/") AND NOT DEFINED GET_REL_PATH_BASE)
         if ("${_PATH}" MATCHES "^/")
