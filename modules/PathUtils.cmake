@@ -45,6 +45,18 @@ function (get_rel_path _VAR _BASE _PATH)
 		${ARGN}
 	)
 
+    if (NOT ("${_BASE}" MATCHES "^/") AND NOT DEFINED GET_REL_PATH_BASE)
+        if ("${_PATH}" MATCHES "^/")
+            message(FATAL_ERROR "get_rel_path(${_VAR} ${_BASE} ${_PATH}): can't calculate patch for absolute path relative to relative one without base provided.")
+        else ()
+            # We can assume that paths have common base
+            # Note: it can perform not so well in case one of paths is going to
+            # far upwards (to many ".." part), since the result would be wrong
+            # in case they are used against directory not deep enough
+
+        endif ()
+    endif ()
+
     if (DEFINED GET_REL_PATH_BASE)
         get_abs_path(_base_abs "${_BASE}" BASE "${GET_REL_PATH_BASE}")
     else ()
