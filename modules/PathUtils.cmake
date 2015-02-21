@@ -20,6 +20,16 @@ function (get_abs_path _VAR _PATH)
         get_filename_component(_result "${_PATH}" REALPATH)
     endif (GET_ABS_PATH_BASE AND (_PATH MATCHES "^[^/]"))
 
+    string(LENGTH "${_result}" _len)
+    if ("${_len}" GREATER 0)
+        string(SUBSTRING "${_result}" 0 1 _prefix)
+    endif ()
+
+    # Working around erroneous get_filename_component() behaviour
+    if (("${_len}" EQUAL 0) OR NOT ("XXX_${_prefix}" STREQUAL "XXX_/"))
+        set(_result "/${_result}")
+    endif ()
+
     set(${_VAR} "${_result}" PARENT_SCOPE)
 endfunction (get_abs_path _VAR _PATH)
 
