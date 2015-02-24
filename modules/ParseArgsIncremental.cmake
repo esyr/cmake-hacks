@@ -1,67 +1,22 @@
-# CMAKE_PARSE_ARGUMENTS(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
+# PARSE_ARGS_INCREMENTAL(<prefix> <options> <one_value_keywords>
+#   <multi_value_keywords> <callback> args...)
 #
-# CMAKE_PARSE_ARGUMENTS() is intended to be used in macros or functions for
-# parsing the arguments given to that macro or function.
-# It processes the arguments and defines a set of variables which hold the
-# values of the respective options.
+# Based on CMAKE_PARSE_ARGUMENTS (CMakeParseArguments.cmake) from the CMake 2.8
+# distribution. Please refer to its documentation for information on general
+# usage.
 #
-# The <options> argument contains all options for the respective macro,
-# i.e. keywords which can be used when calling the macro without any value
-# following, like e.g. the OPTIONAL keyword of the install() command.
-#
-# The <one_value_keywords> argument contains all keywords for this macro
-# which are followed by one value, like e.g. DESTINATION keyword of the
-# install() command.
-#
-# The <multi_value_keywords> argument contains all keywords for this macro
-# which can be followed by more than one value, like e.g. the TARGETS or
-# FILES keywords of the install() command.
-#
-# When done, CMAKE_PARSE_ARGUMENTS() will have defined for each of the
-# keywords listed in <options>, <one_value_keywords> and
-# <multi_value_keywords> a variable composed of the given <prefix>
-# followed by "_" and the name of the respective keyword.
-# These variables will then hold the respective value from the argument list.
-# For the <options> keywords this will be TRUE or FALSE.
-#
-# All remaining arguments are collected in a variable
-# <prefix>_UNPARSED_ARGUMENTS, this can be checked afterwards to see whether
-# your macro was called with unrecognized parameters.
-#
-# As an example here a my_install() macro, which takes similar arguments as the
-# real install() command:
-#
-#   function(MY_INSTALL)
-#     set(options OPTIONAL FAST)
-#     set(oneValueArgs DESTINATION RENAME)
-#     set(multiValueArgs TARGETS CONFIGURATIONS)
-#     cmake_parse_arguments(MY_INSTALL "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
-#     ...
-#
-# Assume my_install() has been called like this:
-#   my_install(TARGETS foo bar DESTINATION bin OPTIONAL blub)
-#
-# After the cmake_parse_arguments() call the macro will have set the following
-# variables:
-#   MY_INSTALL_OPTIONAL = TRUE
-#   MY_INSTALL_FAST = FALSE (this option was not used when calling my_install()
-#   MY_INSTALL_DESTINATION = "bin"
-#   MY_INSTALL_RENAME = "" (was not used)
-#   MY_INSTALL_TARGETS = "foo;bar"
-#   MY_INSTALL_CONFIGURATIONS = "" (was not used)
-#   MY_INSTALL_UNPARSED_ARGUMENTS = "blub" (no value expected after "OPTIONAL"
-#
-# You can the continue and process these variables.
-#
-# Keywords terminate lists of values, e.g. if directly after a one_value_keyword
-# another recognized keyword follows, this is interpreted as the beginning of
-# the new option.
-# E.g. my_install(TARGETS foo DESTINATION OPTIONAL) would result in
-# MY_INSTALL_DESTINATION set to "OPTIONAL", but MY_INSTALL_DESTINATION would
-# be empty and MY_INSTALL_OPTIONAL would be set to TRUE therefor.
+# Two changes implemented over original version:
+#  * (not really a feature) Possible variable name clash avoided.
+#  * Added ability to call callback for each parsed variable. Callback is called
+#    via variable_watch() hack: it is associated with _update_arg variable,
+#    which is set to "${currentArgName}=${currentArg}" value on every parsed
+#    argument value; please refer to function's source to understand how to make
+#    this useful (one can update parent scope's _optionNames/_singleArgNames/
+#    _multiArgNames, for example)
 
 #=============================================================================
 # Copyright 2010 Alexander Neundorf <neundorf@kde.org>
+# Copyright 2015 Eugene Syromyatnikov <evgsyr@gmail.com>
 #
 # Original file is a part of CMake software, which is distributed under the
 # following license:
@@ -127,7 +82,8 @@
 #=============================================================================
 
 
-function(CMAKE_PARSE_ARGUMENTS prefix _optionNames _singleArgNames _multiArgNames)
+function (PARSE_ARGS_INCREMENTAL prefix _optionNames _singleArgNames
+  _multiArgNames _updateCallback)
   # first set all result variables to empty/FALSE
   foreach (arg_name ${_singleArgNames} ${_multiArgNames})
     set(_out_${arg_name})
@@ -139,30 +95,39 @@ function(CMAKE_PARSE_ARGUMENTS prefix _optionNames _singleArgNames _multiArgName
 
   set(_out_UNPARSED_ARGUMENTS)
 
-  set(insideValues FALSE)
+  set(insideValues "NONE")
   set(currentArgName)
+
+  set(_update_arg)
+  variable_watch(_update_arg "${_updateCallback}")
 
   # now iterate over all arguments and fill the result variables
   foreach (currentArg ${ARGN})
-    list(FIND _optionNames "${currentArg}" optionIndex)  # ... then this marks the end of the arguments belonging to this keyword
-    list(FIND _singleArgNames "${currentArg}" singleArgIndex)  # ... then this marks the end of the arguments belonging to this keyword
-    list(FIND _multiArgNames "${currentArg}" multiArgIndex)  # ... then this marks the end of the arguments belonging to this keyword
+    # this marks the end of the arguments belonging to this keyword:
+    list(FIND _optionNames "${currentArg}" optionIndex)
+    # this marks the end of the arguments belonging to this keyword:
+    list(FIND _singleArgNames "${currentArg}" singleArgIndex)
+    # this marks the end of the arguments belonging to this keyword:
+    list(FIND _multiArgNames "${currentArg}" multiArgIndex)
 
-    if (${optionIndex} EQUAL -1  AND  ${singleArgIndex} EQUAL -1  AND  ${multiArgIndex} EQUAL -1)
-      if (insideValues)
+    if (("${optionIndex}" EQUAL -1) AND ("${singleArgIndex}" EQUAL -1) AND
+      ("${multiArgIndex}" EQUAL -1))
+      if (NOT ("XXX_${insideValues}" STREQUAL "XXX_NONE"))
         if ("${insideValues}" STREQUAL "SINGLE")
           set(_out_${currentArgName} ${currentArg})
           set(insideValues FALSE)
         elseif ("${insideValues}" STREQUAL "MULTI")
           list(APPEND _out_${currentArgName} ${currentArg})
         endif ()
+
+        set(_update_arg "${currentArgName}=${currentArg}")
       else ()
         list(APPEND _out_UNPARSED_ARGUMENTS ${currentArg})
       endif ()
     else ()
       if (NOT ${optionIndex} EQUAL -1)
         set(_out_${currentArg} TRUE)
-        set(insideValues FALSE)
+        set(insideValues "NONE")
       elseif (NOT ${singleArgIndex} EQUAL -1)
         set(currentArgName ${currentArg})
         set(_out_${currentArgName})
