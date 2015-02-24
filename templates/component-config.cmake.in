@@ -1,0 +1,66 @@
+# - Config file for the @CMAKE_CONFIG_PROJECT_NAME@ package
+# It defines the following variables:
+#  @CMAKE_CONFIG_PROJECT_NAME@_VAR_PREFIX           - variable prefix used in the following variables
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_INCLUDE_DIRS     - include directories for @CMAKE_CONFIG_PROJECT_NAME@, including dependencies
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_LIBRARIES        - libraries to link against to use @CMAKE_CONFIG_PROJECT_NAME@, including dependencies
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_INCLUDE_DIRS - dependency include directories for @PROJECT_NAME@
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_LIBRARIES    - dependency libraries to link against
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_INCLUDE_DIR      - include directories for @CMAKE_CONFIG_PROJECT_NAME@, not including dependencies
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_LIBRARY          - libraries to link against to use @CMAKE_CONFIG_PROJECT_NAME@, not including dependencies
+#  @CMAKE_CONFIG_PROJECT_VAR_NAME@_COMPONENTS       - list of components. Component variables are provided in form @CMAKE_CONFIG_PROJECT_VAR_NAME@_<COMPONENT>_<VAR>
+
+# Compute paths
+get_filename_component(@CMAKE_CONFIG_PROJECT_NAME@_CMAKE_DIR
+    "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+set(@CMAKE_CONFIG_PROJECT_NAME@_VAR_PREFIX "@CMAKE_CONFIG_PROJECT_VAR_NAME@")
+
+if (NOT TARGET "@CMAKE_CONFIG_TARGET_NAME@" AND NOT "${@CMAKE_CONFIG_PROJECT_NAME@_BINARY_DIR}")
+    # Generated code for finding all the dependencies and filling *_DEP_*
+    # variables
+    @CMAKE_CONFIG_DEPS_CODE@
+
+    include("${@CMAKE_CONFIG_PROJECT_NAME@_CMAKE_DIR}/@CMAKE_CONFIG_PROJECT_NAME@Targets.cmake")
+
+    # Using predefined values (let's hope they're right) and adding appropriate
+    # target properties so we can read them later from another namespace in case
+    # this would be needed.
+
+    set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_INCLUDE_DIR"
+        @CMAKE_CONFIG_INCLUDE_DIR@)
+    set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_LIBRARY"
+        "@CMAKE_CONFIG_LIBRARY@")
+
+    set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_DEFS"
+        @CMAKE_CONFIG_DEFS@ ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_DEFS})
+    set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_CFLAGS"
+        @CMAKE_CONFIG_CFLAGS@ ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_CFLAGS})
+    set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_LINK_FLAGS"
+        @CMAKE_CONFIG_LINK_FLAGS@ ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_LINK_FLAGS})
+
+    foreach (_prop "INCLUDE_DIR" "LIRARY" "DEFS" "CFALGS" "LINK_FLAGS"
+        "DEP_INCLUDE_DIRS" "DEP_LIRARIES" "DEP_DEFS" "DEP_CFALGS" "DEP_LINK_FLAGS")
+        set_property(TARGET "@CMAKE_CONFIG_TARGET_NAME@"
+            PROPERTY "ADDCMP_CMAKE_CONFIG_${_prop}"
+            "@CMAKE_CONFIG_PROJECT_VAR_NAME@_${_prop}")
+    endforeach ()
+else ()_${_lib}_target_${_linking}}
+    if (NOT TARGET "@CMAKE_CONFIG_TARGET_NAME@" AND "${@CMAKE_CONFIG_PROJECT_NAME@_BINARY_DIR}")
+        message(FATAL_ERROR "${@CMAKE_CONFIG_PROJECT_NAME@_BINARY_DIR} present, but no @CMAKE_CONFIG_TARGET_NAME@ target defined: possible name clash. Aborting.")
+    endif ()
+
+    # We have target defined, reading its properties
+    foreach (_prop "INCLUDE_DIR" "LIRARY" "DEFS" "CFALGS" "LINK_FLAGS"
+        "DEP_INCLUDE_DIRS" "DEP_LIRARIES" "DEP_DEFS" "DEP_CFALGS" "DEP_LINK_FLAGS")
+        get_property("@CMAKE_CONFIG_PROJECT_VAR_NAME@_${_prop}"
+            TARGET "@CMAKE_CONFIG_TARGET_NAME@"
+            PROPERTY "ADDCMP_CMAKE_CONFIG_${_prop}")
+    endforeach ()
+endif ()
+
+set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_INCLUDE_DIRS"
+    ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_INCLUDE_DIRS}
+    ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_INCLUDE_DIR})
+set("@CMAKE_CONFIG_PROJECT_VAR_NAME@_LIBRARIES"
+    ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_LIBRARY}
+    ${@CMAKE_CONFIG_PROJECT_VAR_NAME@_DEP_LIBRARIES})
